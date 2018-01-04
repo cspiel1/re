@@ -568,8 +568,6 @@ endif
 
 HAVE_INET_NTOP := 1
 
-CFLAGS  += -DHAVE_FORK
-
 ifneq ($(HAVE_INET_NTOP),)
 CFLAGS  += -DHAVE_INET_NTOP
 endif
@@ -766,8 +764,8 @@ LIBRE_PATH := ../re
 LIBRE_INC := $(shell [ -f $(LIBRE_PATH)/include/re.h ] && \
 	echo "$(LIBRE_PATH)/include")
 ifeq ($(LIBRE_INC),)
-LIBRE_INC := $(shell [ -f /usr/local/include/re/re.h ] && \
-	echo "/usr/local/include/re")
+LIBRE_INC := $(shell [ -f $(STAGEDIR)/usr/include/re/re.h ] && \
+	echo "$(STAGEDIR)/usr/include/re")
 endif
 ifeq ($(LIBRE_INC),)
 LIBRE_INC := $(shell [ -f /usr/include/re/re.h ] && echo "/usr/include/re")
@@ -777,8 +775,8 @@ endif
 LIBRE_SO  := $(shell [ -f $(LIBRE_PATH)/libre$(LIB_SUFFIX) ] \
 	&& echo "$(LIBRE_PATH)")
 ifeq ($(LIBRE_SO),)
-LIBRE_SO  := $(shell [ -f /usr/local/lib/libre$(LIB_SUFFIX) ] \
-	&& echo "/usr/local/lib")
+LIBRE_SO  := $(shell [ -f $(STAGEDIR)/usr/lib/libre$(LIB_SUFFIX) ] \
+	&& echo "$(STAGEDIR)/usr/lib")
 endif
 ifeq ($(LIBRE_SO),)
 LIBRE_SO  := $(shell [ -f /usr/lib/libre$(LIB_SUFFIX) ] && echo "/usr/lib")
