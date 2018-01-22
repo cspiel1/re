@@ -14,7 +14,7 @@
 #include <re_dbg.h>
 
 
-static const int dl_flag = RTLD_NOW | RTLD_LOCAL;
+static const int dl_flag = RTLD_NOW | RTLD_GLOBAL;
 
 
 /**
