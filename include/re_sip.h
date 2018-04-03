@@ -4,6 +4,7 @@
  * Copyright (C) 2010 Creytiv.com
  */
 
+#include <sys/time.h>
 
 enum {
 	SIP_PORT     = 5060,
@@ -368,3 +369,26 @@ int sip_cseq_decode(struct sip_cseq *cseq, const struct pl *pl);
 int sip_keepalive_start(struct sip_keepalive **kap, struct sip *sip,
 			const struct sip_msg *msg, uint32_t interval,
 			sip_keepalive_h *kah, void *arg);
+
+/* Commend: TSK-28355 SIP Trace */
+#define LOG_SIZE_BIT	6
+#define LOG_SIZE		(1 << LOG_SIZE_BIT)
+#define LOG_IDX_MASK	(LOG_SIZE - 1)
+enum sip_log_dir_t {
+	LOG_DIR_SEND = 0,
+	LOG_DIR_RECV
+};
+struct sip_log_entry_t {
+	char *p_buffer;
+	struct timeval timestamp;
+	enum sip_log_dir_t direction;
+};
+
+struct sip_log_t {
+	struct sip_log_entry_t entries[LOG_SIZE];
+	int idx;
+};
+
+void enable_sip_log(struct sip_log_t *p);
+void disable_sip_log(void);
+struct sip_log_t *get_sip_log(void);

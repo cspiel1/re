@@ -72,6 +72,25 @@ struct sip_connqent {
 static uint8_t crlfcrlf[4] = {0x0d, 0x0a, 0x0d, 0x0a};
 
 
+/* commend sip log */
+struct sip_log_t *p_log = NULL;
+
+
+/* Commend: TSK-28355 SIP Trace */
+void enable_sip_log(struct sip_log_t *p)
+{
+	p_log = p;
+}
+void disable_sip_log(void)
+{
+	p_log = NULL;
+}
+struct sip_log_t *get_sip_log(void)
+{
+	return p_log;
+}
+
+
 static void internal_transport_handler(int err, void *arg)
 {
 	(void)err;
@@ -235,6 +254,24 @@ static void conn_keepalive_handler(void *arg)
 static void sip_recv(struct sip *sip, const struct sip_msg *msg)
 {
 	struct le *le = sip->lsnrl.head;
+	struct mbuf *mb = msg->mb;
+
+	/* Commend: TSK-28355 SIP Trace */
+	if (p_log) {
+		size_t oldPos = mb->pos;
+		p_log->idx &= LOG_IDX_MASK;
+
+		if (p_log->entries[p_log->idx].p_buffer)
+			mem_deref(p_log->entries[p_log->idx].p_buffer);
+
+		gettimeofday(&p_log->entries[p_log->idx].timestamp, NULL);
+		mb->pos = 0;
+		mbuf_strdup(mb, &p_log->entries[p_log->idx].p_buffer, mb->end - mb->pos);
+		mb->pos = oldPos;
+		p_log->entries[p_log->idx].direction = LOG_DIR_RECV;
+
+		++p_log->idx;
+	}
 
 	while (le) {
 		struct sip_lsnr *lsnr = le->data;
@@ -755,6 +792,24 @@ int sip_transp_send(struct sip_connqent **qentp, struct sip *sip, void *sock,
 	default:
 		err = EPROTONOSUPPORT;
 		break;
+	}
+
+	/* Commend: TSK-28355 SIP Trace */
+	if (p_log) {
+		size_t oldPos = mb->pos;
+
+		p_log->idx &= LOG_IDX_MASK;
+
+		if (p_log->entries[p_log->idx].p_buffer)
+			mem_deref(p_log->entries[p_log->idx].p_buffer);
+
+		gettimeofday(&p_log->entries[p_log->idx].timestamp, NULL);
+		mb->pos = 0;
+		mbuf_strdup(mb, &p_log->entries[p_log->idx].p_buffer, mb->end - mb->pos);
+		mb->pos = oldPos;
+		p_log->entries[p_log->idx].direction = LOG_DIR_SEND;
+
+		++p_log->idx;
 	}
 
 	return err;
