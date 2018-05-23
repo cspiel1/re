@@ -518,6 +518,8 @@ static void addr_handler(int err, const struct dnshdr *hdr, struct list *ansl,
 
 	dns_rrlist_sort_addr(&req->addrl, req->sortkey);
 
+	//Set mb->pos to 0 if lookup successful
+	req->mb->pos = 0;
 	err = request_next(req);
 	if (err)
 		goto fail;
