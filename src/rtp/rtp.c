@@ -346,6 +346,68 @@ int rtp_listen(struct rtp_sock **rsp, int proto, const struct sa *ip,
 
 
 /**
+ * Listen on an RTP Socket for simple RTP playback without RTCP.
+ *
+ * @param rsp         Pointer to returned RTP socket
+ * @param proto       Transport protocol
+ * @param ip          Local IP address
+ * @param port		  Listen port
+ * @param recvh       RTP Receive handler
+ * @param arg         Handler argument
+ *
+ * @return 0 for success, otherwise errorcode
+ */
+int rtp_listen_rtpplay(struct rtp_sock **rsp, int proto, const struct sa *ip,
+	       rtp_recv_h *recvh, void *arg)
+{
+	struct rtp_sock *rs;
+	struct udp_sock *us_rtp;
+	int err;
+
+	if (!ip || !recvh)
+		return EINVAL;
+
+	err = rtp_alloc(&rs);
+	if (err)
+		return err;
+
+	rs->proto = proto;
+	rs->recvh = recvh;
+	rs->rtcph = NULL;
+	rs->arg   = arg;
+
+	switch (proto) {
+	case IPPROTO_UDP:
+		us_rtp = NULL;
+		rs->sock_rtcp = NULL;
+		rs->local = *ip;
+		err = udp_listen(&us_rtp, &rs->local, udp_recv_handler, rs);
+		if (err)
+			break;
+		if (IN_MULTICAST (sa_in(&rs->local)))
+			err = udp_multicast_join(us_rtp, &rs->local);
+		if (err)
+			break;
+
+		rs->sock_rtp = us_rtp;
+
+		break;
+
+	default:
+		err = EPROTONOSUPPORT;
+		break;
+	}
+
+	if (err)
+		mem_deref(rs);
+	else
+		*rsp = rs;
+
+	return err;
+}
+
+
+/**
  * Encode a new RTP header into the beginning of the buffer
  *
  * @param rs     RTP Socket
