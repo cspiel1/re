@@ -287,7 +287,7 @@ static int request(struct sipreg *reg, bool reset_ls)
 		sip_loopstate_reset(&reg->ls);
 
 	return sip_drequestf(&reg->req, reg->sip, true, "REGISTER", reg->dlg,
-			     0, reg->auth, send_handler, response_handler, reg,
+			     0, 0/*reg->auth*/, send_handler, response_handler, reg,
 			     "%s"
 			     "%b"
 			     "Expires: %u\r\n"
@@ -336,7 +336,7 @@ int sipreg_register(struct sipreg **regp, struct sip *sip, const char *reg_uri,
 	int err;
 
 	if (!regp || !sip || !reg_uri || !to_uri || !from_uri ||
-	    !expires || !cuser)
+		!cuser)
 		return EINVAL;
 
 	reg = mem_zalloc(sizeof(*reg), destructor);
