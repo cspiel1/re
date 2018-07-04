@@ -280,14 +280,18 @@ static int send_handler(enum sip_transp tp, const struct sa *src,
 
 static int request(struct sipreg *reg, bool reset_ls)
 {
+	struct sip_auth *send_auth = reg->auth;
 	if (reg->terminated)
 		reg->expires = 0;
 
-	if (reset_ls)
+
+	if (reset_ls) {
 		sip_loopstate_reset(&reg->ls);
+		send_auth = NULL;
+	}
 
 	return sip_drequestf(&reg->req, reg->sip, true, "REGISTER", reg->dlg,
-			     0, 0/*reg->auth*/, send_handler, response_handler, reg,
+			     0, send_auth, send_handler, response_handler, reg,
 			     "%s"
 			     "%b"
 			     "Expires: %u\r\n"
