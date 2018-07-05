@@ -190,7 +190,7 @@ static void response_handler(int err, const struct sip_msg *msg, void *arg)
 		sip_msg_hdr_apply(msg, true, SIP_HDR_CONTACT, contact_handler,
 				  reg);
 		reg->server_expiry = reg->wait;
-		reg->wait *= 900;
+		reg->wait *= 400;
 		reg->failc = 0;
 
 		if (reg->regid > 0 && !reg->terminated && !reg->ka)
