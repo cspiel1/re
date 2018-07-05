@@ -351,7 +351,6 @@ int rtp_listen(struct rtp_sock **rsp, int proto, const struct sa *ip,
  * @param rsp         Pointer to returned RTP socket
  * @param proto       Transport protocol
  * @param ip          Local IP address
- * @param port		  Listen port
  * @param recvh       RTP Receive handler
  * @param arg         Handler argument
  *
