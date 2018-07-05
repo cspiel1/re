@@ -204,6 +204,7 @@ int   rtp_listen(struct rtp_sock **rsp, int proto, const struct sa *ip,
 		 rtp_recv_h *recvh, rtcp_recv_h *rtcph, void *arg);
 int   rtp_listen_rtpplay(struct rtp_sock **rsp, int proto, const struct sa *ip,
 	       rtp_recv_h *recvh, void *arg);
+int   rtp_open(struct rtp_sock **rsp, int af);
 int   rtp_hdr_encode(struct mbuf *mb, const struct rtp_header *hdr);
 int   rtp_hdr_decode(struct rtp_header *hdr, struct mbuf *mb);
 int   rtp_encode(struct rtp_sock *rs, bool ext, bool marker, uint8_t pt,
