@@ -197,6 +197,7 @@ static void response_handler(int err, const struct sip_msg *msg, void *arg)
 			start_outbound(reg, msg);
 	}
 	else {
+		reg->registered = false;
 		if (reg->terminated && !reg->registered)
 			goto out;
 
@@ -241,6 +242,10 @@ static void response_handler(int err, const struct sip_msg *msg, void *arg)
 	}
 
  out:
+	if (!reg->expires && reg->registered) {
+		// registered with expire 0 for cisco mode
+		return;
+	}
 	if (!reg->expires) {
 		mem_deref(reg);
 	}
