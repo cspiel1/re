@@ -268,10 +268,8 @@ static int send_handler(enum sip_transp tp, const struct sa *src,
 
 	(void)dst;
 
-	if (reg->expires > 0) {
-		reg->laddr = *src;
-		reg->tp = tp;
-	}
+	reg->laddr = *src;
+	reg->tp = tp;
 
 	err = mbuf_printf(mb, "Contact: <sip:%s@%J%s>;expires=%u%s%s",
 			  reg->cuser, &reg->laddr, sip_transp_param(reg->tp),
