@@ -165,3 +165,110 @@ int net_if_list(net_ifaddr_h *ifh, void *arg)
 
 	return err;
 }
+
+
+/**
+ * Get local IP address for a given destination
+ *
+ * @param dest Destination host. A domain, IPv4 or IPv6 address.
+ * @param localip Returned IP address of the local interface from which the
+ *			destination host is reachable.
+ *
+ * @return 0 if success, otherwise errorcode
+ */
+int net_if_getaddr_for(const struct pl *dest, struct sa *localip, bool isip)
+{
+	struct addrinfo hints;
+	struct addrinfo *res = NULL;
+	struct sa sa_tar;
+	struct sockaddr *tar = NULL;
+	socklen_t tarlen;
+	int err;
+	int sock;
+	struct sockaddr_storage addr;
+	socklen_t s;
+	struct sockaddr *p_addr = (struct sockaddr *)&addr;
+	char buf[64];
+
+	if (!pl_isset(dest))
+		return EINVAL;
+
+	if (!isip) {
+		if (pl_strcpy(dest, buf, sizeof(buf)))
+			return EINVAL;
+
+		memset(&hints, 0, sizeof(hints));
+		/* set-up hints structure */
+		hints.ai_family   = PF_UNSPEC;
+		hints.ai_flags    = AI_PASSIVE;
+		hints.ai_socktype = SOCK_DGRAM;
+		err = getaddrinfo(buf, "0", &hints, &res);
+		if (err) {
+			DEBUG_WARNING("%s: getaddrinfo error for %r: %s\n", __func__, dest,
+					gai_strerror(err));
+			return EADDRNOTAVAIL;
+		}
+		if (res == NULL) {
+			DEBUG_WARNING("%s: getaddrinfo returned nothing for dest %r\n",
+					__func__, dest);
+			return EINVAL;
+		}
+		tar = res->ai_addr;
+		tarlen = res->ai_addrlen;
+	} else {
+		// Port is not relevant since we use a UDP socket.
+		err = sa_set(&sa_tar, dest, 5060);
+		if (err) {
+			DEBUG_WARNING("%s: Unsupported IP address %r. %m\n", __func__, dest,
+					err);
+			return err;
+		}
+		tar = &sa_tar.u.sa;
+		tarlen = sa_tar.len;
+	}
+
+	sock = socket(tar->sa_family, SOCK_DGRAM, 0);
+	if (sock == -1) {
+		err = errno;
+		DEBUG_WARNING("%s: Could not create socket: %m\n", __func__, err);
+		goto out;
+	}
+
+	err = net_sockopt_reuse_set(sock, true);
+	if (err)
+		goto out;
+
+	err = connect(sock, tar, tarlen);
+	if (err == -1) {
+		err = errno;
+		/* The network isn't reachable. */
+		DEBUG_WARNING("%s: Could not connect to %r: %m\n", __func__, dest, err);
+		goto out;
+	}
+
+	s = sizeof(addr);
+	err = getsockname(sock, (struct sockaddr *)&addr, &s);
+	if (err) {
+		DEBUG_WARNING("%s: Error in getsockname for dest=%r: %m", __func__,
+				dest, err);
+		goto out;
+	}
+
+	if (p_addr->sa_family == AF_INET) {
+		struct sockaddr_in *p_sin = (struct sockaddr_in *)p_addr;
+		if (p_sin->sin_addr.s_addr == 0) {
+			err = EINVAL;
+			DEBUG_WARNING("%s: getsockname returned 0.0.0.0 for dest %r\n",
+					__func__, dest);
+			goto out;
+		}
+	}
+
+	err = sa_set_sa(localip, p_addr);
+out:
+	if (sock != -1)
+		close(sock);
+	if (res)
+		freeaddrinfo(res);
+	return err;
+}

@@ -82,6 +82,7 @@ int net_if_list(net_ifaddr_h *ifh, void *arg);
 int net_if_apply(net_ifaddr_h *ifh, void *arg);
 int net_if_debug(struct re_printf *pf, void *unused);
 int net_if_getlinklocal(const char *ifname, int af, struct sa *ip);
+int net_if_getaddr_for(const struct pl *dest, struct sa *localip, bool isip);
 
 
 /* Net interface (ifaddrs.c) */
