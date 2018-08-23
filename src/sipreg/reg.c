@@ -205,9 +205,7 @@ static void response_handler(int err, const struct sip_msg *msg, void *arg)
 
 		case 401:
 		case 407:
-			if (msg->scode == 401) {
-				sip_auth_reset(reg->auth);
-			}
+			sip_auth_reset(reg->auth);
 			err = sip_auth_authenticate(reg->auth, msg);
 			if (err) {
 				err = (err == EAUTH) ? 0 : err;
