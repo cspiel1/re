@@ -87,7 +87,7 @@ static bool if_getaddr_handler(const char *ifname,
 
 #if 1
 	/* skip loopback and link-local IP */
-	if (sa_is_loopback(sa) || sa_is_linklocal(sa))
+	if (sa_is_loopback(sa))
 		return false;
 #endif
 

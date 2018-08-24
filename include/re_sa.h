@@ -43,6 +43,7 @@ void     sa_set_in6(struct sa *sa, const uint8_t *addr, uint16_t port);
 int      sa_set_sa(struct sa *sa, const struct sockaddr *s);
 void     sa_set_port(struct sa *sa, uint16_t port);
 int      sa_decode(struct sa *sa, const char *str, size_t len);
+void     sa_set_ll_sin6_scope_id(int scope_id);
 
 int      sa_af(const struct sa *sa);
 uint32_t sa_in(const struct sa *sa);
@@ -51,6 +52,7 @@ int      sa_ntop(const struct sa *sa, char *buf, int size);
 uint16_t sa_port(const struct sa *sa);
 bool     sa_isset(const struct sa *sa, int flag);
 uint32_t sa_hash(const struct sa *sa, int flag);
+int      sa_in6_scope_id(const struct sa *sa);
 
 void     sa_cpy(struct sa *dst, const struct sa *src);
 bool     sa_cmp(const struct sa *l, const struct sa *r, int flag);

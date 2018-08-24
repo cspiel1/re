@@ -18,6 +18,9 @@
 #include <re_dbg.h>
 
 
+static int default_sin6_scope_id = 2;
+
+
 /**
  * Initialize a Socket Address
  *
@@ -84,6 +87,8 @@ int sa_set_str(struct sa *sa, const char *addr, uint16_t port)
 	case AF_INET6:
 		sa->u.in6.sin6_port = htons(port);
 		sa->len = sizeof(struct sockaddr_in6);
+		if (IN6_IS_ADDR_LINKLOCAL(&sa->u.in6.sin6_addr))
+			sa->u.in6.sin6_scope_id = default_sin6_scope_id;
 		break;
 #endif
 
@@ -135,6 +140,8 @@ void sa_set_in6(struct sa *sa, const uint8_t *addr, uint16_t port)
 	memcpy(&sa->u.in6.sin6_addr, addr, 16);
 	sa->u.in6.sin6_port = htons(port);
 	sa->len = sizeof(struct sockaddr_in6);
+	if (IN6_IS_ADDR_LINKLOCAL(&sa->u.in6.sin6_addr))
+		sa->u.in6.sin6_scope_id = default_sin6_scope_id;
 #else
 	(void)addr;
 	(void)port;
@@ -590,4 +597,20 @@ bool sa_is_any(const struct sa *sa)
 	default:
 		return false;
 	}
+}
+
+
+void sa_set_ll_sin6_scope_id(int scope_id)
+{
+	default_sin6_scope_id = scope_id;
+}
+
+
+int sa_in6_scope_id(const struct sa *sa)
+{
+#ifdef HAVE_INET6
+	return sa->u.in6.sin6_scope_id;
+#else
+	return 0;
+#endif
 }
