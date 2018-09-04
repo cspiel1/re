@@ -27,6 +27,7 @@ enum {
 struct sipreg {
 	struct sip_loopstate ls;
 	struct sa laddr;
+	bool use_received;
 	struct tmr tmr;
 	struct sip *sip;
 	struct sip_keepalive *ka;
@@ -212,6 +213,11 @@ static void response_handler(int err, const struct sip_msg *msg, void *arg)
 				break;
 			}
 
+			if (sa_isset(&msg->via.received, SA_ALL)) {
+				reg->use_received = true;
+				reg->laddr = msg->via.received;
+			}
+
 			err = request(reg, false);
 			if (err)
 				break;
@@ -263,7 +269,9 @@ static int send_handler(enum sip_transp tp, const struct sa *src,
 
 	(void)dst;
 
-	reg->laddr = *src;
+	if (!reg->use_received)
+		reg->laddr = *src;
+
 	reg->tp = tp;
 
 	err = mbuf_printf(mb, "Contact: <sip:%s@%J%s>;expires=%u%s%s",
