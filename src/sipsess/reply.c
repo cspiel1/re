@@ -84,6 +84,7 @@ int sipsess_reply_2xx(struct sipsess *sess, const struct sip_msg *msg,
 	struct sipsess_reply *reply;
 	struct sip_contact contact;
 	int err = ENOMEM;
+	char *auri;
 
 	reply = mem_zalloc(sizeof(*reply), destructor);
 	if (!reply)
@@ -94,7 +95,11 @@ int sipsess_reply_2xx(struct sipsess *sess, const struct sip_msg *msg,
 	reply->msg  = mem_ref((void *)msg);
 	reply->sess = sess;
 
-	sip_contact_set(&contact, sess->cuser, &msg->dst, msg->tp);
+	err = pl_strdup(&auri, &msg->to.auri);
+	if (err)
+		goto out;
+
+	sip_contact_set(&contact, auri , NULL, msg->tp);
 
 	err = sip_treplyf(&sess->st, &reply->mb, sess->sip,
 			  msg, true, scode, reason,
@@ -125,6 +130,7 @@ int sipsess_reply_2xx(struct sipsess *sess, const struct sip_msg *msg,
 	}
 
  out:
+	mem_deref(auri);
 	if (err) {
 		sess->st = mem_deref(sess->st);
 		mem_deref(reply);

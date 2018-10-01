@@ -72,6 +72,7 @@ int sipsess_accept(struct sipsess **sessp, struct sipsess_sock *sock,
 	struct sipsess *sess;
 	va_list ap;
 	int err;
+	char *auri;
 
 	if (!sessp || !sock || !msg || scode < 101 || scode > 299 ||
 	    !cuser || !ctype)
@@ -106,8 +107,11 @@ int sipsess_accept(struct sipsess **sessp, struct sipsess_sock *sock,
 	else {
 		struct sip_contact contact;
 
-		sip_contact_set(&contact, sess->cuser, &msg->dst, msg->tp);
+		err = pl_strdup(&auri, &msg->to.auri);
+		if (err)
+			goto out;
 
+		sip_contact_set(&contact, auri , NULL, msg->tp);
 		err = sip_treplyf(&sess->st, NULL, sess->sip,
 				  msg, true, scode, reason,
 				  "%H"
@@ -132,6 +136,7 @@ int sipsess_accept(struct sipsess **sessp, struct sipsess_sock *sock,
 		goto out;
 
  out:
+	mem_deref(auri);
 	if (err)
 		mem_deref(sess);
 	else
