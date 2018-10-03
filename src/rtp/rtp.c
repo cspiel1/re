@@ -221,15 +221,26 @@ static int udp_range_listen(struct rtp_sock *rs, const struct sa *ip,
 	struct sa rtcp;
 	int tries = 64;
 	int err = 0;
+	uint16_t port;
+	bool useRand = true;
 
 	rs->local = rtcp = *ip;
 
-	/* try hard */
-	while (tries--) {
-		struct udp_sock *us_rtp, *us_rtcp;
-		uint16_t port;
+	if ((max_port - min_port) < tries) {
+		useRand = false;
+		port = min_port - 2;
+	}
 
-		port = (min_port + (rand_u16() % (max_port - min_port)));
+	/* try hard */
+	while (tries--
+	|| (!useRand && port < max_port)) {
+		struct udp_sock *us_rtp, *us_rtcp;
+
+		if (useRand)
+			port = (min_port + (rand_u16() % (max_port - min_port)));
+		else
+			port = port + 2;
+
 		port &= 0xfffe;
 
 		sa_set_port(&rs->local, port);
