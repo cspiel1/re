@@ -170,6 +170,15 @@ static bool contact_handler(const struct sip_hdr *hdr,
 }
 
 
+struct sa *get_via_received(const struct sip_msg *msg)
+{
+	if (sa_isset(&msg->via.received, SA_ADDR)) {
+		return &(msg->via.received);
+	}
+	return NULL;
+}
+
+
 static void response_handler(int err, const struct sip_msg *msg, void *arg)
 {
 	const struct sip_hdr *minexp;
