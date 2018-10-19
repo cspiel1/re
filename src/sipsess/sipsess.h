@@ -75,7 +75,7 @@ void sipsess_terminate(struct sipsess *sess, int err,
 		       const struct sip_msg *msg);
 int  sipsess_ack(struct sipsess_sock *sock, struct sip_dialog *dlg,
 		uint32_t cseq, struct sip_auth *auth,
-		const char *ctype, struct mbuf *desc);
+		const char *ctype, struct mbuf *desc, const char *cuser, const struct sip_msg *msg);
 int  sipsess_ack_again(struct sipsess_sock *sock, const struct sip_msg *msg);
 int  sipsess_reply_2xx(struct sipsess *sess, const struct sip_msg *msg,
 		       uint16_t scode, const char *reason, struct mbuf *desc,

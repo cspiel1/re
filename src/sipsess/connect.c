@@ -63,7 +63,7 @@ static void invite_resp_handler(int err, const struct sip_msg *msg, void *arg)
 		}
 
 		err |= sipsess_ack(sess->sock, sess->dlg, msg->cseq.num,
-				   sess->auth, sess->ctype, desc);
+				   sess->auth, sess->ctype, desc, sess->cuser, msg);
 
 		sess->established = true;
 		mem_deref(desc);

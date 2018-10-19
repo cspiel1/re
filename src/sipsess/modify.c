@@ -51,7 +51,7 @@ static void reinvite_resp_handler(int err, const struct sip_msg *msg,
 		}
 
 		(void)sipsess_ack(sess->sock, sess->dlg, msg->cseq.num,
-				  sess->auth, sess->ctype, desc);
+				  sess->auth, sess->ctype, desc, sess->cuser, msg);
 		mem_deref(desc);
 	}
 	else {
