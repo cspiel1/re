@@ -77,12 +77,11 @@ static void resp_handler(int err, const struct sip_msg *msg, void *arg)
 }
 
 
-int sipsess_ack(struct sipsess_sock *sock, struct sip_dialog *dlg,
-		uint32_t cseq, struct sip_auth *auth,
-		const char *ctype, struct mbuf *desc, const char *cuser, const struct sip_msg *msg)
+int sipsess_ack(struct sipsess *sess, struct sipsess_sock *sock,
+		struct sip_dialog *dlg,	uint32_t cseq, struct sip_auth *auth,
+		const char *ctype, struct mbuf *desc)
 {
 	struct sipsess_ack *ack;
-	struct sip_contact contact;
 	int err;
 
 	ack = mem_zalloc(sizeof(*ack), destructor);
@@ -95,22 +94,23 @@ int sipsess_ack(struct sipsess_sock *sock, struct sip_dialog *dlg,
 
 	ack->dlg  = mem_ref(dlg);
 	ack->cseq = cseq;
-	sip_contact_set(&contact, cuser, NULL, msg->tp);
 
 	err = sip_drequestf(&ack->req, sock->sip, false, "ACK", dlg, cseq,
-			    auth, send_handler, resp_handler, ack,
+				auth, send_handler, resp_handler, ack,
 				"%H"
-			    "%s%s%s"
-			    "Content-Length: %zu\r\n"
-			    "\r\n"
-			    "%b",
-				sip_contact_print, &contact,
-			    desc ? "Content-Type: " : "",
-			    desc ? ctype : "",
-			    desc ? "\r\n" : "",
-			    desc ? mbuf_get_left(desc) : (size_t)0,
-			    desc ? mbuf_buf(desc) : NULL,
-			    desc ? mbuf_get_left(desc) : (size_t)0);
+				"%s%s%s"
+				"Content-Length: %zu\r\n"
+				"\r\n"
+				"%b",
+				sip_contact_print, sess->contacth(sess->arg),
+				desc ? "Content-Type: " : "",
+				desc ? ctype : "",
+				desc ? "\r\n" : "",
+				desc ? mbuf_get_left(desc) : (size_t)0,
+				desc ? mbuf_buf(desc) : NULL,
+				desc ? mbuf_get_left(desc) : (size_t)0);
+
+
 	if (err)
 		goto out;
 

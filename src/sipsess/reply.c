@@ -82,9 +82,7 @@ int sipsess_reply_2xx(struct sipsess *sess, const struct sip_msg *msg,
 		      const char *fmt, va_list *ap)
 {
 	struct sipsess_reply *reply;
-	struct sip_contact contact;
 	int err = ENOMEM;
-	char *auri;
 
 	reply = mem_zalloc(sizeof(*reply), destructor);
 	if (!reply)
@@ -95,12 +93,6 @@ int sipsess_reply_2xx(struct sipsess *sess, const struct sip_msg *msg,
 	reply->msg  = mem_ref((void *)msg);
 	reply->sess = sess;
 
-	err = pl_strdup(&auri, &msg->to.auri);
-	if (err)
-		goto out;
-
-	sip_contact_set(&contact, auri , NULL, msg->tp);
-
 	err = sip_treplyf(&sess->st, &reply->mb, sess->sip,
 			  msg, true, scode, reason,
 			  "%H"
@@ -109,7 +101,7 @@ int sipsess_reply_2xx(struct sipsess *sess, const struct sip_msg *msg,
 			  "Content-Length: %zu\r\n"
 			  "\r\n"
 			  "%b",
-			  sip_contact_print, &contact,
+			  sip_contact_print, sess->contacth(sess->arg),
 			  fmt, ap,
 			  desc ? "Content-Type: " : "",
 			  desc ? sess->ctype : "",
@@ -130,7 +122,6 @@ int sipsess_reply_2xx(struct sipsess *sess, const struct sip_msg *msg,
 	}
 
  out:
-	mem_deref(auri);
 	if (err) {
 		sess->st = mem_deref(sess->st);
 		mem_deref(reply);

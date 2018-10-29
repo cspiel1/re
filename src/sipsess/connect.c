@@ -29,9 +29,13 @@ static int send_handler(enum sip_transp tp, const struct sa *src,
 	struct sipsess *sess = arg;
 	(void)dst;
 
-	sip_contact_set(&contact, sess->cuser, src, tp);
+	if(!sess->contacth(sess->arg)) {
+		sip_contact_set(&contact, sess->cuser, src, tp);
 
-	return mbuf_printf(mb, "%H", sip_contact_print, &contact);
+		return mbuf_printf(mb, "%H", sip_contact_print, &contact);
+	}
+
+	return mbuf_printf(mb, "%H", sip_contact_print, sess->contacth(sess->arg));
 }
 
 
@@ -62,8 +66,8 @@ static void invite_resp_handler(int err, const struct sip_msg *msg, void *arg)
 			err = sess->offerh(&desc, msg, sess->arg);
 		}
 
-		err |= sipsess_ack(sess->sock, sess->dlg, msg->cseq.num,
-				   sess->auth, sess->ctype, desc, sess->cuser, msg);
+		err |= sipsess_ack(sess, sess->sock, sess->dlg, msg->cseq.num,
+				   sess->auth, sess->ctype, desc);
 
 		sess->established = true;
 		mem_deref(desc);
@@ -186,6 +190,7 @@ int sipsess_connect(struct sipsess **sessp, struct sipsess_sock *sock,
 		    sip_auth_h *authh, void *aarg, bool aref,
 		    sipsess_offer_h *offerh, sipsess_answer_h *answerh,
 		    sipsess_progr_h *progrh, sipsess_estab_h *estabh,
+		    sipsess_contact_h *contacth,
 		    sipsess_info_h *infoh, sipsess_refer_h *referh,
 		    sipsess_close_h *closeh, void *arg, const char *fmt, ...)
 {
@@ -196,7 +201,7 @@ int sipsess_connect(struct sipsess **sessp, struct sipsess_sock *sock,
 		return EINVAL;
 
 	err = sipsess_alloc(&sess, sock, cuser, ctype, desc, authh, aarg, aref,
-			    offerh, answerh, progrh, estabh, infoh, referh,
+			    offerh, answerh, progrh, estabh, contacth, infoh, referh,
 			    closeh, arg);
 	if (err)
 		return err;
