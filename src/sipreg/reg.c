@@ -203,6 +203,11 @@ static void response_handler(int err, const struct sip_msg *msg, void *arg)
 		reg->wait *= 400;
 		reg->failc = 0;
 
+		if (sa_isset(&msg->via.received, SA_ALL)) {
+			reg->use_received = true;
+			reg->laddr = msg->via.received;
+		}
+
 		if (reg->regid > 0 && !reg->terminated && !reg->ka)
 			start_outbound(reg, msg);
 	}
