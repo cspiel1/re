@@ -59,6 +59,7 @@ extern "C" {
 #include "re_turn.h"
 #include "re_udp.h"
 #include "re_websock.h"
+#include "re_xml.h"
 
 #ifdef __cplusplus
 }
