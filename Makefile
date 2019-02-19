@@ -32,6 +32,7 @@ MODULES += bfcp
 MODULES += aes srtp
 MODULES += odict
 MODULES += json
+MODULES += xml
 
 INSTALL := install
 ifeq ($(DESTDIR),)
