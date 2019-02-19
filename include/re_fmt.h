@@ -27,6 +27,7 @@ struct pl {
 extern const struct pl pl_null;
 
 void     pl_set_str(struct pl *pl, const char *str);
+void     pl_set_n_str(struct pl *pl, const char *str, int n);
 void     pl_set_mbuf(struct pl *pl, const struct mbuf *mb);
 uint32_t pl_u32(const struct pl *pl);
 uint32_t pl_x32(const struct pl *pl);
@@ -43,6 +44,7 @@ int      pl_strcasecmp(const struct pl *pl, const char *str);
 int      pl_cmp(const struct pl *pl1, const struct pl *pl2);
 int      pl_casecmp(const struct pl *pl1, const struct pl *pl2);
 const char *pl_strchr(const struct pl *pl, char c);
+const char *pl_strstr(const struct pl *pl, const char *str);
 
 /** Advance pl position/length by +/- N bytes */
 static inline void pl_advance(struct pl *pl, ssize_t n)

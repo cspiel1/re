@@ -145,7 +145,7 @@ static size_t local_ftoa(char *buf, double n, size_t dp)
  *
  * <pre>
  *   %b  (char *, size_t)        Buffer string with pointer and length
- *   %r  (struct pl)             Pointer-length object
+ *   %r  (struct pl *)           Pointer-length object
  *   %w  (uint8_t *, size_t)     Binary buffer to hexadecimal format
  *   %j  (struct sa *)           Socket address - address part only
  *   %J  (struct sa *)           Socket address and port - like 1.2.3.4:1234
