@@ -42,6 +42,7 @@ extern "C" {
 #include "re_odict.h"
 #include "re_json.h"
 #include "re_rtp.h"
+#include "re_rtsp.h"
 #include "re_sdp.h"
 #include "re_uri.h"
 #include "re_sip.h"
