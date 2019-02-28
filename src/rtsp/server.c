@@ -154,6 +154,7 @@ static void recv_handler(struct mbuf *mb, void *arg)
 
 			goto out;
 		}
+
 		if (mbuf_get_left(conn->mb) < msg->clen) {
 			conn->mb->pos = pos;
 			mem_deref(msg);
@@ -210,7 +211,9 @@ static void recv_handler(struct mbuf *mb, void *arg)
 static void close_handler(int err, void *arg)
 {
 	struct rtsp_conn *conn = arg;
-	(void) err;
+
+	if (err)
+		DEBUG_WARNING("%s Connection Closed. err=(%m)", __func__, err);
 
 	conn_close(conn);
 	mem_deref(conn);
@@ -299,13 +302,6 @@ int rtsp_listen(struct rtsp_sock **sockp, const struct sa *laddr,
 
 	return err;
 }
-
-
-// int urtsp_liste(...)
-// {
-
-// }
-
 
 
 struct tcp_sock *rtsp_sock_tcp(struct rtsp_sock *sock)

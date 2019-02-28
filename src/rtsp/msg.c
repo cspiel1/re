@@ -159,6 +159,7 @@ int rtsp_msg_decode(struct rtsp_msg **msgp, struct mbuf *mb, bool svr)
     msg->channel = mbuf_read_u8(msg->_mb);
     msg->clen = ntohs(mbuf_read_u16(msg->_mb));
     mbuf_advance(msg->_mb, -4);
+    l = msg->clen;
     err = 0;
     goto out;
   }
