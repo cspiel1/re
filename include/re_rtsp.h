@@ -99,6 +99,7 @@ struct rtsp_msg {
 	struct pl path;						/**< Resource path				*/
 	struct pl prm;						/**< Parameter						*/
 	uint16_t scode;						/**< RTSP status code			*/
+	uint32_t cseq;						/**< RTSP csequence				*/
 	struct pl reason;					/**< RTSP reason					*/
 	struct list hdrl;					/**< Header list					*/
 	struct msg_ctype ctype;		/**< Content type					*/

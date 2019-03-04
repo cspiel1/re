@@ -99,6 +99,10 @@ static inline int hdr_add(struct rtsp_msg *msg, const struct pl *name,
     msg->clen = pl_u32(&hdr->val);
     break;
 
+  case RTSP_HDR_CSEQ:
+    msg->cseq = pl_u32(&hdr->val);
+    break;
+
   default:
     break;
   }
