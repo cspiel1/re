@@ -93,6 +93,7 @@ struct rtsp_hdr {
 };
 
 struct rtsp_msg {
+	struct le le;							/**< List element					*/
 	struct pl ver; 						/**< RTSP version					*/
 	struct pl met;						/**< RTSP Request method	*/
 	struct pl path;						/**< Resource path				*/
