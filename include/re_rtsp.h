@@ -133,10 +133,24 @@ typedef void(rtsp_sock_msg_h)(struct rtsp_conn *conn,
 
 int rtsp_listen(struct rtsp_sock **sockp, const struct sa *laddr,
 		rtsp_sock_msg_h sockmsgh, void *arg);
+int rtsps_listen(struct rtsp_sock **sockp, const struct sa *laddr,
+		const char *cert, rtsp_sock_msg_h sockmsgh, void *arg);
 
 
 struct tcp_sock *rtsp_sock_tcp(struct rtsp_sock *sock);
 const struct sa *rtsp_conn_peer(const struct rtsp_conn *conn);
 struct tcp_conn *rtsp_conn_tcp(struct rtsp_conn *conn);
-// struct tls_conn *rtsp_conn_tls(struct rtsp_conn *conn);
+struct tls_conn *rtsp_conn_tls(struct rtsp_conn *conn);
 void rtsp_conn_close(struct rtsp_conn *conn);
+
+int rtsp_reply(struct rtsp_conn *conn, uint8_t ver, uint16_t scode,
+	const char *reason, const char *fmt, ...);
+int rtsp_creply(struct rtsp_conn *conn, uint8_t ver, uint16_t scode,
+	const char *reason, const char *ctype, struct mbuf *data,
+	const char *fmt, ...);
+int rtsp_send_ild(struct rtsp_conn *conn, uint8_t ch, uint8_t *data, size_t n);
+int rtsp_send_req(struct rtsp_msg **msgp, struct rtsp_conn *conn, uint8_t ver,
+	const char *method, const char *path, const char *fmt, ...);
+int rtsp_send_creq(struct rtsp_msg **msgq, struct rtsp_conn *conn, uint8_t ver,
+	const char *method, const char *path, const char *ctype, struct mbuf *data,
+	const char *fmt, ...);

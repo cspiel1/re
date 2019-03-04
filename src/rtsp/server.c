@@ -17,7 +17,6 @@
 #include <re_msg.h>
 #include <re_rtsp.h>
 
-#include <string.h>
 #define DEBUG_MODULE "rtsp_server"
 #define DEBUG_LEVEL 6
 #include <re_dbg.h>
@@ -213,7 +212,7 @@ static void close_handler(int err, void *arg)
 	struct rtsp_conn *conn = arg;
 
 	if (err)
-		DEBUG_WARNING("%s Connection Closed. err=(%m)", __func__, err);
+		DEBUG_WARNING("%s Connection close on err=(%m)", __func__, err);
 
 	conn_close(conn);
 	mem_deref(conn);
@@ -304,6 +303,48 @@ int rtsp_listen(struct rtsp_sock **sockp, const struct sa *laddr,
 }
 
 
+/**
+ * create Secure RTSP socket (RTSP V2.0 only)
+ *
+ * @param sockp			Pointer to returned RTSP Socket
+ * @param laddr			Network addess to listen on
+ * @param cert			Rile path of TLS certificate
+ * @param sockmsgh	Message Handler
+ * @param arg				Handler argument
+ *
+ * @return 					0 if success, otherwise errorcode
+ */
+int rtsps_listen(struct rtsp_sock **sockp, const struct sa *laddr,
+		const char *cert, rtsp_sock_msg_h *sockmsgh, void *arg)
+{
+	struct rtsp_sock *sock;
+	int err;
+
+	if (!sockp || !laddr || !cert || !sockmsgh)
+		return EINVAL;
+
+	err = rtsp_listen(&sock, laddr, sockmsgh, arg);
+	if (err)
+		return err;
+
+#ifdef USE_TLS
+	err = tls_alloc(&sock->tls, TLS_METHOD_SSLV23, cert, NULL);
+#else
+	err = EPROTONOSUPPORT;
+#endif
+	if (err)
+		goto out;
+
+ out:
+	if (err)
+		mem_deref(sock);
+	else
+		*sockp = sock;
+
+	return err;
+}
+
+
 struct tcp_sock *rtsp_sock_tcp(struct rtsp_sock *sock)
 {
 	return sock ? sock->ts : NULL;
@@ -322,6 +363,12 @@ struct tcp_conn *rtsp_conn_tcp(struct rtsp_conn *conn)
 }
 
 
+struct tls_conn *rtsp_conn_tls(struct rtsp_conn *conn)
+{
+	return conn ? conn->sc : NULL;
+}
+
+
 void rtsp_conn_close(struct rtsp_conn *conn)
 {
 	if (!conn)
@@ -331,4 +378,291 @@ void rtsp_conn_close(struct rtsp_conn *conn)
 	conn->tc = mem_deref(conn->tc);
 }
 
+
 /* WRITE FUNCTIONS */
+static int rtsp_vreply(struct rtsp_conn *conn, uint8_t ver, uint16_t scode,
+	const char *reason, const char *fmt, va_list ap)
+{
+	struct mbuf *mb;
+	int err;
+
+	if (!conn || !ver || !scode || !reason)
+		return EINVAL;
+
+	if (!conn->tc)
+		return ENOTCONN;
+
+	mb = mbuf_alloc(8192);
+	if (!mb)
+		return ENOMEM;
+
+	err = mbuf_printf(mb, "RTSP/%u.0 %u %s\r\n", ver, scode, reason);
+	if (fmt)
+		err |= mbuf_vprintf(mb, fmt, ap);
+	else
+		err |= mbuf_write_str(mb, "Content-Length: 0\r\n\r\n");
+
+	if (err)
+		goto out;
+
+	mb->pos = 0;
+	err = tcp_send(conn->tc, mb);
+	if (err)
+		goto out;
+
+ out:
+	mem_deref(mb);
+
+	return err;
+}
+
+
+/**
+ * Send an RTSP response
+ *
+ * @param conn		RTSP connection
+ * @param ver			RTSP version (1 / 2)
+ * @param scode		Rsponse status code
+ * @param reason	Response reason phrase
+ * @param fmt			Fromatted RTSP message
+ *
+ * @return 				0 if success, otherwise errorcode
+ */
+int rtsp_reply(struct rtsp_conn *conn, uint8_t ver, uint16_t scode,
+	const char *reason, const char *fmt, ...)
+{
+	va_list ap;
+	int err;
+
+	va_start(ap, fmt);
+	err = rtsp_vreply(conn, ver, scode, reason, fmt, ap);
+	va_end(ap);
+
+	return err;
+}
+
+
+/**
+ * Send RTSP respones with with content
+ *
+ * @param conn		RTSP connection
+ * @param ver 		RTSP version (1 / 2)
+ * @param scode 	Response status code
+ * @param reason	Response reason phrase
+ * @param ctype		Body content type
+ * @param data		Body data
+ * @param fmt			Formated RTSP message
+ *
+ * @return 				0 if success, otherwise errorcode
+ */
+int rtsp_creply(struct rtsp_conn *conn, uint8_t ver, uint16_t scode,
+	const char *reason, const char *ctype, struct mbuf *data,
+	const char *fmt, ...)
+{
+	struct mbuf *mb;
+	va_list ap;
+	int err;
+
+	if (!ctype || !fmt)
+		return EINVAL;
+
+	mb = mbuf_alloc(8192);
+	if (!mb)
+		return ENOMEM;
+
+	va_start(ap, fmt);
+	err = mbuf_vprintf(mb, fmt, ap);
+	va_end(ap);
+	if (err)
+		goto out;
+
+	err = rtsp_reply(conn, ver, scode, reason,
+		"%b"
+		"Content-Type: %s\r\n"
+		"Content-Length: %zu\r\n"
+		"\r\n"
+		"%b",
+		mb->buf, mb->end,
+		ctype,
+		data->end,
+		data->buf, data->end);
+	if (err)
+		goto out;
+
+ out:
+	mem_deref(mb);
+
+	return err;
+}
+
+
+/**
+ * Send RTSP Interleaved Data (ILD) Package
+ *
+ * @param conn		RTSP connection
+ * @param ch			ILD channel
+ * @param data		ILD data
+ * @param n				size of ILD
+ *
+ * @return				0 if success, otherwise errorcode
+ */
+int rtsp_send_ild(struct rtsp_conn *conn, uint8_t ch,	uint8_t *data, size_t n)
+{
+	struct mbuf *mb;
+	int err;
+
+	if (!conn || !data)
+		return EINVAL;
+
+	if (!conn->tc)
+		return ENOTCONN;
+
+	mb = mbuf_alloc(n + 4);
+	if (!mb)
+		return ENOMEM;
+
+	err = mbuf_write_u8(mb, 0x24);
+	err |= mbuf_write_u8(mb, ch);
+	err |= mbuf_write_u16(mb, htons(n));
+	err |= mbuf_write_mem(mb, data, n);
+	if (err)
+		goto out;
+
+	mb->pos = 0;
+	err = tcp_send(conn->tc, mb);
+	if (err)
+		goto out;
+
+ out:
+	mem_deref(mb);
+
+	return err;
+}
+
+
+static int rtsp_send_vreq(struct rtsp_msg **msgp, struct rtsp_conn *conn,
+	uint8_t ver, const char *method, const char *path, const char *fmt,
+	va_list ap)
+{
+	struct mbuf *mb;
+	int err;
+	struct rtsp_msg *msg = NULL;
+
+	if (!msgp || !conn || !ver || !method || !path)
+		return EINVAL;
+
+	if (!conn->tc)
+		return ENOTCONN;
+
+	mb = mbuf_alloc(8192);
+	if (!mb)
+		return ENOMEM;
+
+	err = mbuf_printf(mb, "%s %s RTSP/%u.0\r\n", method, path, ver);
+	if (fmt) {
+		err |= mbuf_vprintf(mb, fmt, ap);
+	} else
+		err |= mbuf_write_str(mb, "Content-Length: 0\r\n\r\n");
+
+	if (err)
+		goto out;
+
+	mb->pos = 0;
+	err = rtsp_msg_decode(&msg, mb, true);
+	if (err)
+		goto out;
+
+	mb->pos = 0;
+	err = tcp_send(conn->tc, mb);
+	if (err) {
+		mem_deref(msg);
+		goto out;
+	}
+
+	*msgp = msg;
+
+ out:
+	mem_deref(mb);
+
+	return err;
+}
+
+
+/**
+ * Send an RTSP request
+ *
+ * @param msgq			RTSP message pointer
+ * @param conn 			RTSP connection
+ * @param ver				RTSP version (1 / 2)
+ * @param method		RTSP request method
+ * @param paht 			Requested path
+ * @param fmt				Formatted RTSP message
+ *
+ * @return					0 if success, otherwise errorcode
+ */
+int rtsp_send_req(struct rtsp_msg **msgq, struct rtsp_conn *conn, uint8_t ver,
+	const char *method, const char *path, const char *fmt, ...)
+{
+	va_list ap;
+	int err;
+
+	va_start(ap, fmt);
+	err = rtsp_send_vreq(msgq, conn, ver, method, path, fmt, ap);
+	va_end(ap);
+
+	return err;
+}
+
+
+/**
+ * Send RTSP respones with with content
+ *
+ * @param conn		RTSP connection
+ * @param ver 		RTSP version (1 / 2)
+ * @param method	RTSP request method
+ * @param path		Requested path
+ * @param ctype		Body content type
+ * @param data		Body data
+ * @param fmt			Formated RTSP message
+ *
+ * @return 				0 if success, otherwise errorcode
+ */
+int rtsp_send_creq(struct rtsp_msg **msgq, struct rtsp_conn *conn, uint8_t ver,
+	const char *method, const char *path, const char *ctype, struct mbuf *data,
+	const char *fmt, ...)
+{
+	int err;
+	struct mbuf *mb;
+	va_list ap;
+
+	if (!ctype || !fmt)
+		return EINVAL;
+
+	mb = mbuf_alloc(8192);
+	if (!mb)
+		return ENOMEM;
+
+	va_start(ap, fmt);
+	err = mbuf_vprintf(mb, fmt, ap);
+	va_end(ap);
+	if (err)
+		goto out;
+
+	err = rtsp_send_req(msgq, conn, ver, method, path,
+		"%b"
+		"Content-Type: %s\r\n"
+		"Content-Length: %zu\r\n"
+		"\r\n"
+		"%b",
+		mb->buf, mb->end,
+		ctype,
+		data->end,
+		data->buf, data->end);
+	if (err)
+		goto out;
+
+ out:
+	mem_deref(mb);
+
+	return err;
+}
