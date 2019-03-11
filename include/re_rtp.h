@@ -205,6 +205,7 @@ int   rtp_listen(struct rtp_sock **rsp, int proto, const struct sa *ip,
 int   rtp_listen_rtpplay(struct rtp_sock **rsp, int proto, const struct sa *ip,
 	       rtp_recv_h *recvh, void *arg);
 int   rtp_open(struct rtp_sock **rsp, int af);
+int   rtp_over_tcp(struct rtp_sock **rsp, const struct sa *tar, void *arg);
 int   rtp_hdr_encode(struct mbuf *mb, const struct rtp_header *hdr);
 int   rtp_hdr_decode(struct rtp_header *hdr, struct mbuf *mb);
 int   rtp_encode(struct rtp_sock *rs, bool ext, bool marker, uint8_t pt,
@@ -214,6 +215,7 @@ int   rtp_send(struct rtp_sock *rs, const struct sa *dst, bool ext,
 	       bool marker, uint8_t pt, uint32_t ts, struct mbuf *mb);
 int   rtp_debug(struct re_printf *pf, const struct rtp_sock *rs);
 void *rtp_sock(const struct rtp_sock *rs);
+int rtp_proto(const struct rtp_sock *rs);
 uint32_t rtp_sess_ssrc(const struct rtp_sock *rs);
 const struct sa *rtp_local(const struct rtp_sock *rs);
 

@@ -14,6 +14,8 @@
 #include <re_net.h>
 #include <re_udp.h>
 #include <re_rtp.h>
+#include <re_msg.h>
+#include <re_rtsp.h>
 #include "rtcp.h"
 
 
@@ -32,6 +34,8 @@ struct rtp_sock {
 	int proto;              /**< Transport Protocol    */
 	void *sock_rtp;         /**< RTP Socket            */
 	void *sock_rtcp;        /**< RTCP Socket           */
+	uint16_t rtp_port;      /**< RTP PORT/ILD Channel  */
+	uint16_t rtcp_port;     /**< RTPC PORT/ILD Channel */
 	struct sa local;        /**< Local RTP Address     */
 	struct sa rtcp_peer;    /**< RTCP address of Peer  */
 	rtp_recv_h *recvh;      /**< RTP Receive handler   */
@@ -147,6 +151,13 @@ static void destructor(void *data)
 	case IPPROTO_UDP:
 		udp_handler_set(rs->sock_rtp, NULL, NULL);
 		udp_handler_set(rs->sock_rtcp, NULL, NULL);
+
+		mem_deref(rs->sock_rtp);
+		mem_deref(rs->sock_rtcp);
+		break;
+
+	case IPPROTO_TCP:
+		mem_deref(rs->sock_rtp);
 		break;
 
 	default:
@@ -156,8 +167,6 @@ static void destructor(void *data)
 	/* Destroy RTCP Session now */
 	mem_deref(rs->rtcp);
 
-	mem_deref(rs->sock_rtp);
-	mem_deref(rs->sock_rtcp);
 }
 
 
@@ -451,6 +460,36 @@ int rtp_open(struct rtp_sock **rsp, int af)
 
 
 /**
+ * Transfer RTP over TCP using a RTSP connection
+ *
+ * @param rsp			Pointer to returend RTP socket
+ * @param tar			target RTP channel
+ * @param arg			RTSP Connection struct
+ *
+ * @return 				0 if success, otherwise errorcode
+ */
+int rtp_over_tcp(struct rtp_sock **rsp, const struct sa *tar, void *arg)
+{
+	struct rtp_sock *rs;
+	int err;
+
+	if (!arg)
+		return EINVAL;
+
+	err = rtp_alloc(&rs);
+	if (err)
+		return err;
+
+	rs->proto = IPPROTO_TCP;
+	rs->sock_rtp = arg;
+	rs->rtp_port = sa_port(tar);
+
+	*rsp = rs;
+	return 0;
+}
+
+
+/**
  * Encode a new RTP header into the beginning of the buffer
  *
  * @param rs     RTP Socket
@@ -556,8 +595,21 @@ int rtp_send(struct rtp_sock *rs, const struct sa *dst, bool ext,
 		rtcp_sess_tx_rtp(rs->rtcp, ts, mbuf_get_left(mb));
 
 	mb->pos = pos;
+	switch(rs->proto) {
+		case IPPROTO_UDP:
+			err = udp_send(rs->sock_rtp, dst, mb);
+			break;
 
-	return udp_send(rs->sock_rtp, dst, mb);
+		case IPPROTO_TCP:
+			err = rtsp_send_ild(rs->sock_rtp, rs->rtp_port,
+				mbuf_buf(mb), mbuf_get_left(mb));
+			break;
+
+		default:
+			err = EOPNOTSUPP;
+	}
+
+	return err;
 }
 
 
@@ -584,6 +636,19 @@ void *rtp_sock(const struct rtp_sock *rs)
 void *rtcp_sock(const struct rtp_sock *rs)
 {
 	return rs ? rs->sock_rtcp : NULL;
+}
+
+
+/**
+ * Get the RTP transport protocol
+ *
+ * @param rs RTP Socket
+ *
+ * @return Protocol of the socket
+ */
+int rtp_proto(const struct rtp_sock *rs)
+{
+	return rs ? rs->proto : 0;
 }
 
 
