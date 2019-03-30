@@ -39,6 +39,7 @@ struct sipreg {
 	sip_resp_h *resph;
 	void *arg;
 	uint32_t expires;
+	uint32_t ka_interval;
 	uint32_t server_expiry;
 	uint32_t failc;
 	uint32_t wait;
@@ -128,14 +129,20 @@ static void keepalive_handler(int err, void *arg)
 static void start_outbound(struct sipreg *reg, const struct sip_msg *msg)
 {
 	const struct sip_hdr *flowtimer;
+	uint32_t ka_interval;
 
-	if (!sip_msg_hdr_has_value(msg, SIP_HDR_REQUIRE, "outbound"))
+	if (!sip_msg_hdr_has_value(msg, SIP_HDR_REQUIRE, "outbound") && !reg->ka_interval)
 		return;
 
-	flowtimer = sip_msg_hdr(msg, SIP_HDR_FLOW_TIMER);
+	if (reg->ka_interval)
+		ka_interval = reg->ka_interval;
+	else {
+		flowtimer = sip_msg_hdr(msg, SIP_HDR_FLOW_TIMER);
+		ka_interval = flowtimer ? pl_u32(&flowtimer->val) : 0;
+	}
 
 	(void)sip_keepalive_start(&reg->ka, reg->sip, msg,
-				  flowtimer ? pl_u32(&flowtimer->val) : 0,
+				  ka_interval,
 				  keepalive_handler, reg);
 }
 
@@ -208,7 +215,7 @@ static void response_handler(int err, const struct sip_msg *msg, void *arg)
 			reg->laddr = msg->via.received;
 		}
 
-		if (reg->regid > 0 && !reg->terminated && !reg->ka)
+		if ((reg->ka_interval || reg->regid > 0) && !reg->terminated && !reg->ka)
 			start_outbound(reg, msg);
 	}
 	else {
@@ -339,6 +346,7 @@ static int request(struct sipreg *reg, bool reset_ls)
  * @param from_name  SIP From-header display name (optional)
  * @param from_uri SIP From-header URI
  * @param expires  Registration interval in [seconds]
+ * @param ka_interval  Keep-Alive interval in [seconds]
  * @param cuser    Contact username
  * @param routev   Optional route vector
  * @param routec   Number of routes
@@ -355,7 +363,7 @@ static int request(struct sipreg *reg, bool reset_ls)
  */
 int sipreg_register(struct sipreg **regp, struct sip *sip, const char *reg_uri,
 		    const char *to_uri, const char *from_name,
-		    const char *from_uri, uint32_t expires,
+		    const char *from_uri, uint32_t expires, uint32_t ka_interval,
 		    const char *cuser, const char *routev[], uint32_t routec,
 		    int regid, sip_auth_h *authh, void *aarg, bool aref,
 		    sip_resp_h *resph, void *arg,
@@ -408,6 +416,7 @@ int sipreg_register(struct sipreg **regp, struct sip *sip, const char *reg_uri,
 
 	reg->sip     = mem_ref(sip);
 	reg->expires = expires;
+	reg->ka_interval = ka_interval;
 	reg->resph   = resph ? resph : dummy_handler;
 	reg->arg     = arg;
 	reg->regid   = regid;
