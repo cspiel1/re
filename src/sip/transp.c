@@ -27,8 +27,8 @@
 enum {
 	TCP_ACCEPT_TIMEOUT    = 32,
 	TCP_IDLE_TIMEOUT      = 900,
-	TCP_KEEPALIVE_TIMEOUT = 10,
-	TCP_KEEPALIVE_INTVAL  = 120,
+	TCP_KEEPALIVE_TIMEOUT = 120,
+	TCP_KEEPALIVE_INTVAL  = 10,
 	TCP_BUFSIZE_MAX       = 65536,
 };
 
@@ -238,13 +238,14 @@ static void conn_keepalive_handler(void *arg)
 	mb.end  = 4;
 
 	err = tcp_send(conn->tc, &mb);
+
 	if (err) {
 		conn_close(conn, err);
 		mem_deref(conn);
 		return;
 	}
 
-	tmr_start(&conn->tmr, TCP_KEEPALIVE_TIMEOUT * 1000,
+	tmr_start(&conn->tmr, 2 * conn->ka_interval * 1000,
 		  conn_tmr_handler, conn);
 	tmr_start(&conn->tmr_ka, sip_keepalive_wait(conn->ka_interval),
 		  conn_keepalive_handler, conn);
@@ -1023,10 +1024,10 @@ int  sip_keepalive_tcp(struct sip_keepalive *ka, struct sip_conn *conn,
 
 	if (!tmr_isrunning(&conn->tmr_ka)) {
 
-		interval = MAX(interval ? interval : TCP_KEEPALIVE_INTVAL,
-			       TCP_KEEPALIVE_TIMEOUT * 2);
-
-		conn->ka_interval = interval;
+		if (interval < TCP_KEEPALIVE_INTVAL)
+			conn->ka_interval = TCP_KEEPALIVE_INTVAL;
+		else
+			conn->ka_interval = interval;
 
 		tmr_start(&conn->tmr_ka, sip_keepalive_wait(conn->ka_interval),
 			  conn_keepalive_handler, conn);
