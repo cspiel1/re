@@ -33,6 +33,14 @@ struct httpauth_digest_resp {
 };
 
 
+/** HTTP Basic */
+struct httpauth_basic {
+	struct mbuf *mb;
+	struct pl realm;
+	struct pl auth;
+};
+
+
 int httpauth_digest_challenge_decode(struct httpauth_digest_chall *chall,
 				     const struct pl *hval);
 int httpauth_digest_response_decode(struct httpauth_digest_resp *resp,
@@ -45,3 +53,9 @@ int httpauth_digest_make_response(struct httpauth_digest_resp **resp,
 		const struct pl *pwd, const struct pl *body);
 int httpauth_digest_response_encode(const struct httpauth_digest_resp *resp,
 				  struct mbuf *mb);
+
+int httpauth_basic_decode(struct httpauth_basic *basic,
+		const struct pl *hval);
+int httpauth_basic_make_response(struct httpauth_basic *basic,
+		const struct pl *user, const struct pl *pwd);
+int httpauth_basic_encode(const struct httpauth_basic *basic, struct mbuf *mb);
