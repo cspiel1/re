@@ -903,3 +903,38 @@ int dnsc_srv_set(struct dnsc *dnsc, const struct sa *srvv, uint32_t srvc)
 
 	return 0;
 }
+
+
+/**
+ * Returns the number of DNS servers in the DNS client struct.
+ * @param dnsc DNS Client
+ * @return The number of DNS servers.
+ */
+uint32_t dnsc_srvc_get(struct dnsc *dnsc)
+{
+	if (!dnsc)
+		return 0;
+
+	return dnsc->srvc;
+}
+
+
+/**
+ * Get the address of the dns server from the dnsc struct.
+ * @param dnsc DNS Client
+ * @param srvv Points to array where we want to receive the dns server
+ *				addresses.
+ * @param srvc Number of elements in srvv.
+ */
+int  dnsc_srvv_get(struct dnsc *dnsc, struct sa *srvv, uint32_t srvc)
+{
+	uint32_t i;
+
+	if (!dnsc)
+		return EINVAL;
+
+	for (i=0; i<dnsc->srvc && i<srvc; i++)
+		srvv[i] = dnsc->srvv[i];
+
+	return 0;
+}
