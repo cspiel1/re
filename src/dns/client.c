@@ -879,6 +879,24 @@ int dnsc_alloc(struct dnsc **dcpp, const struct dnsc_conf *conf,
 
 
 /**
+ * Set the DNS Clients configuration
+ *
+ * @param dnsc DNS Client
+ * @param conf DNS configuration
+ *
+ * @return 0 if success, otherwise errorcode
+ */
+int  dnsc_conf_set(struct dnsc *dnsc, const struct dnsc_conf *conf)
+{
+	if (!dnsc)
+		return EINVAL;
+
+	dnsc->conf = *conf;
+	return 0;
+}
+
+
+/**
  * Set the DNS Servers on a DNS Client
  *
  * @param dnsc DNS Client

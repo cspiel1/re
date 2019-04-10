@@ -200,6 +200,7 @@ struct dnsc_conf {
 
 int  dnsc_alloc(struct dnsc **dcpp, const struct dnsc_conf *conf,
 		const struct sa *srvv, uint32_t srvc);
+int  dnsc_conf_set(struct dnsc *dnsc, const struct dnsc_conf *conf);
 int  dnsc_srv_set(struct dnsc *dnsc, const struct sa *srvv, uint32_t srvc);
 uint32_t dnsc_srvc_get(struct dnsc *dnsc);
 int  dnsc_srvv_get(struct dnsc *dnsc, struct sa *srvv, uint32_t srvc);
