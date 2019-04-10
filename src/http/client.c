@@ -31,6 +31,7 @@ enum {
 };
 
 struct http_cli {
+	struct http_conf conf;
 	struct list reql;
 	struct hash *ht_conn;
 	struct dnsc *dnsc;
@@ -61,6 +62,13 @@ struct http_req {
 	bool chunked;
 	bool secure;
 	bool close;
+};
+
+
+static const struct http_conf default_conf = {
+	CONN_TIMEOUT,
+	RECV_TIMEOUT,
+	IDLE_TIMEOUT,
 };
 
 
@@ -127,7 +135,20 @@ static void conn_destructor(void *arg)
 
 static void conn_idle(struct conn *conn)
 {
-	tmr_start(&conn->tmr, IDLE_TIMEOUT, timeout_handler, conn);
+	struct http_req *req;
+	struct http_cli *cli;
+	if (!conn)
+		return;
+
+	req =  conn->req;
+	if (req)
+		return;
+
+	cli = req->cli;
+	if (cli)
+		return;
+
+	tmr_start(&conn->tmr, cli->conf.idle_timeout, timeout_handler, conn);
 	conn->req = NULL;
 }
 
@@ -282,6 +303,7 @@ static void estab_handler(void *arg)
 {
 	struct conn *conn = arg;
 	struct http_req *req = conn->req;
+	struct http_cli *cli;
 	int err;
 
 	if (!req)
@@ -293,7 +315,11 @@ static void estab_handler(void *arg)
 		return;
 	}
 
-	tmr_start(&conn->tmr, RECV_TIMEOUT, timeout_handler, conn);
+	cli = req->cli;
+	if (!cli)
+		return;
+
+	tmr_start(&conn->tmr, cli->conf.recv_timeout, timeout_handler, conn);
 }
 
 
@@ -401,6 +427,7 @@ static int conn_connect(struct http_req *req)
 {
 	const struct sa *addr = &req->srvv[req->srvc];
 	struct conn *conn;
+	struct http_cli *cli;
 	int err;
 
 	conn = list_ledata(hash_lookup(req->cli->ht_conn,
@@ -408,7 +435,11 @@ static int conn_connect(struct http_req *req)
 	if (conn) {
 		err = tcp_send(conn->tc, req->mbreq);
 		if (!err) {
-			tmr_start(&conn->tmr, RECV_TIMEOUT,
+			cli = req->cli;
+			if (!cli)
+				return EINVAL;
+
+			tmr_start(&conn->tmr, cli->conf.recv_timeout,
 				  timeout_handler, conn);
 
 			req->conn = conn;
@@ -445,7 +476,7 @@ static int conn_connect(struct http_req *req)
 	}
 #endif
 
-	tmr_start(&conn->tmr, CONN_TIMEOUT, timeout_handler, conn);
+	tmr_start(&conn->tmr, req->cli->conf.conn_timeout, timeout_handler, conn);
 
 	req->conn = conn;
 	conn->req = req;
@@ -657,6 +688,16 @@ void http_req_set_conn_handler(struct http_req *req, http_conn_h *connh)
 }
 
 
+int http_client_set_config(struct http_cli *clip, struct http_conf *conf)
+{
+	if (!clip || !conf)
+		return EINVAL;
+
+	clip->conf = *conf;
+	return 0;
+}
+
+
 /**
  * Allocate an HTTP client instance
  *
@@ -690,6 +731,7 @@ int http_client_alloc(struct http_cli **clip, struct dnsc *dnsc)
 		goto out;
 
 	cli->dnsc = mem_ref(dnsc);
+	cli->conf = default_conf;
 
  out:
 	if (err)
