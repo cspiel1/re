@@ -94,6 +94,15 @@ struct http_conf {
 	uint32_t idle_timeout;  /* in [ms] */
 };
 
+struct http_uri {
+	struct pl scheme;
+	struct pl host;
+	struct pl port;
+	struct pl path;
+};
+
+int http_uri_decode(struct http_uri *uri, const char* s);
+
 typedef bool(http_hdr_h)(const struct http_hdr *hdr, void *arg);
 
 int  http_msg_decode(struct http_msg **msgp, struct mbuf *mb, bool req);
