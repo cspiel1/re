@@ -11,6 +11,7 @@
 #define XML_CKEY_SYMBOLS 3
 /* XML_V_SYMBOLS are one '=' and two '"' */
 #define XML_V_SYMBOLS(x) x ? 3 : 0
+#define XML_XMLNS_SYMBOLS 6
 
 int xml_next_key(struct mbuf *buf);
 int xml_prev_key(struct mbuf *buf);
