@@ -145,9 +145,9 @@ struct tcp_conn *rtsp_conn_tcp(struct rtsp_conn *conn);
 struct tls_conn *rtsp_conn_tls(struct rtsp_conn *conn);
 void rtsp_conn_close(struct rtsp_conn *conn);
 
-int rtsp_reply(struct rtsp_conn *conn, uint8_t ver, uint16_t scode,
+int rtsp_reply(const struct rtsp_conn *conn, uint8_t ver, uint16_t scode,
 	const char *reason, const char *fmt, ...);
-int rtsp_creply(struct rtsp_conn *conn, uint8_t ver, uint16_t scode,
+int rtsp_creply(const struct rtsp_conn *conn, uint8_t ver, uint16_t scode,
 	const char *reason, const char *ctype, struct mbuf *data,
 	const char *fmt, ...);
 int rtsp_send_ild(struct rtsp_conn *conn, uint8_t ch, uint8_t *data, size_t n);

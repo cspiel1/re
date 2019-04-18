@@ -380,8 +380,8 @@ void rtsp_conn_close(struct rtsp_conn *conn)
 
 
 /* WRITE FUNCTIONS */
-static int rtsp_vreply(struct rtsp_conn *conn, uint8_t ver, uint16_t scode,
-	const char *reason, const char *fmt, va_list ap)
+static int rtsp_vreply(const struct rtsp_conn *conn, uint8_t ver,
+	uint16_t scode, const char *reason, const char *fmt, va_list ap)
 {
 	struct mbuf *mb;
 	int err;
@@ -428,7 +428,7 @@ static int rtsp_vreply(struct rtsp_conn *conn, uint8_t ver, uint16_t scode,
  *
  * @return 				0 if success, otherwise errorcode
  */
-int rtsp_reply(struct rtsp_conn *conn, uint8_t ver, uint16_t scode,
+int rtsp_reply(const struct rtsp_conn *conn, uint8_t ver, uint16_t scode,
 	const char *reason, const char *fmt, ...)
 {
 	va_list ap;
@@ -455,7 +455,7 @@ int rtsp_reply(struct rtsp_conn *conn, uint8_t ver, uint16_t scode,
  *
  * @return 				0 if success, otherwise errorcode
  */
-int rtsp_creply(struct rtsp_conn *conn, uint8_t ver, uint16_t scode,
+int rtsp_creply(const struct rtsp_conn *conn, uint8_t ver, uint16_t scode,
 	const char *reason, const char *ctype, struct mbuf *data,
 	const char *fmt, ...)
 {
