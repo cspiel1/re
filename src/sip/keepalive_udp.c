@@ -97,14 +97,8 @@ static void stun_response_handler(int err, uint16_t scode, const char *reason,
 	}
 
  out:
-	if (err) {
-		udpconn_close(uc, err);
-		mem_deref(uc);
-	}
-	else {
-		tmr_start(&uc->tmr_ka, sip_keepalive_wait(uc->ka_interval),
-			  udpconn_keepalive_handler, uc);
-	}
+	tmr_start(&uc->tmr_ka, sip_keepalive_wait(uc->ka_interval),
+		  udpconn_keepalive_handler, uc);
 }
 
 
