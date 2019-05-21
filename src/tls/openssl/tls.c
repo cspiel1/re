@@ -10,6 +10,7 @@
 #include <openssl/bn.h>
 #include <openssl/evp.h>
 #include <openssl/x509.h>
+#include <openssl/x509v3.h>
 #include <re_types.h>
 #include <re_fmt.h>
 #include <re_mem.h>
@@ -40,6 +41,7 @@ struct tls_conn {
 	SSL *ssl;
 };
 
+static int verify_handler(int ok, X509_STORE_CTX *ctx);
 
 static void destructor(void *data)
 {
@@ -162,6 +164,10 @@ int tls_alloc(struct tls **tlsp, enum tls_method method, const char *keyfile,
 	SSL_CTX_set_verify_depth(tls->ctx, 1);
 #endif
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+	SSL_CTX_set_verify(tls->ctx, SSL_VERIFY_PEER, verify_handler);
+#endif
+
 	/* Load our keys and certificates */
 	if (keyfile) {
 		if (pwd) {
@@ -181,10 +187,6 @@ int tls_alloc(struct tls **tlsp, enum tls_method method, const char *keyfile,
 			err = EINVAL;
 			goto out;
 		}
-
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-		SSL_CTX_set_verify(tls->ctx, SSL_VERIFY_PEER, NULL);
-#endif
 
 		r = SSL_CTX_use_PrivateKey_file(tls->ctx, keyfile,
 						SSL_FILETYPE_PEM);
@@ -229,6 +231,44 @@ int tls_add_ca(struct tls *tls, const char *capath)
 	}
 
 	return 0;
+}
+
+
+int tls_set_verify_purpose(struct tls *tls, const char *purpose)
+{
+	int err;
+	int i;
+    X509_PURPOSE *xptmp;
+
+	i = X509_PURPOSE_get_by_sname(purpose);
+
+	if (i < 0) {
+		DEBUG_WARNING("Invalid purpose %s\n", purpose);
+		return EINVAL;
+	}
+
+	/* purpose index -> purpose object */
+	xptmp = X509_PURPOSE_get0(i);
+
+	/* purpose object -> purpose value */
+	i = X509_PURPOSE_get_id(xptmp);
+
+	err = SSL_CTX_set_purpose(tls->ctx, i);
+
+	return err == 1 ? 0 : EINVAL;
+}
+
+
+int tls_peer_set_verify_host(struct tls_conn *tc, const char *hostname)
+{
+	int err;
+
+	if (!tc)
+		return EINVAL;
+
+	err = SSL_set1_host(tc->ssl, hostname);
+
+	return err == 1 ? 0 : EINVAL;
 }
 
 
@@ -510,10 +550,35 @@ int tls_set_certificate(struct tls *tls, const char *pem, size_t len)
 
 static int verify_handler(int ok, X509_STORE_CTX *ctx)
 {
-	(void)ok;
-	(void)ctx;
+	int err, depth;
 
-	return 1;    /* We trust the certificate from peer */
+	err = X509_STORE_CTX_get_error(ctx);
+
+#if (DEBUG_LEVEL >= 6)
+	char    buf[128];
+	X509   *err_cert;
+
+	err_cert = X509_STORE_CTX_get_current_cert(ctx);
+
+	X509_NAME_oneline(X509_get_subject_name(err_cert), buf, 128);
+	DEBUG_INFO("%s: subject_name = %s\n", __func__, buf);
+
+	X509_NAME_oneline(X509_get_issuer_name(err_cert), buf, 128);
+	DEBUG_INFO("%s: issuer_name  = %s\n", __func__, buf);
+#endif
+
+	if (err) {
+		depth = X509_STORE_CTX_get_error_depth(ctx);
+		DEBUG_WARNING("%s: err          = %d\n", __func__, err);
+		DEBUG_WARNING("%s: error_string = %s\n", __func__, X509_verify_cert_error_string(err));
+		DEBUG_WARNING("%s: depth        = %d\n", __func__, depth);
+	}
+
+#if (DEBUG_LEVEL >= 6)
+	DEBUG_INFO("tls verify ok = %d\n", ok);
+#endif
+
+	return ok;
 }
 
 
