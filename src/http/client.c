@@ -22,6 +22,10 @@
 #include "http.h"
 
 
+#define DEBUG_MODULE "client"
+#define DEBUG_LEVEL 5
+#include <re_dbg.h>
+
 enum {
 	CONN_TIMEOUT = 30000,
 	RECV_TIMEOUT = 60000,
@@ -476,8 +480,10 @@ static int conn_connect(struct http_req *req)
 		if (err)
 			goto out;
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
 		if (req->cli->tls_hostname)
 			err = tls_peer_set_verify_host(conn->sc, req->cli->tls_hostname);
+#endif
 
 		if (err)
 			goto out;
@@ -805,6 +811,11 @@ int http_client_set_tls_hostname(struct http_cli *cli, const struct pl *hostname
 {
 	if (!cli || !hostname)
 		return EINVAL;
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+	DEBUG_WARNING("verify hostname needs openssl version 1.1.0\n");
+	return EINVAL;
+#endif
 
 	return pl_strdup(&cli->tls_hostname, hostname);
 }

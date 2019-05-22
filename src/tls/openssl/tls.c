@@ -240,7 +240,11 @@ int tls_set_verify_purpose(struct tls *tls, const char *purpose)
 	int i;
     X509_PURPOSE *xptmp;
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
 	i = X509_PURPOSE_get_by_sname(purpose);
+#else
+	i = X509_PURPOSE_get_by_sname((char *) purpose);
+#endif
 
 	if (i < 0) {
 		DEBUG_WARNING("Invalid purpose %s\n", purpose);
@@ -258,7 +262,7 @@ int tls_set_verify_purpose(struct tls *tls, const char *purpose)
 	return err == 1 ? 0 : EINVAL;
 }
 
-
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
 int tls_peer_set_verify_host(struct tls_conn *tc, const char *hostname)
 {
 	int err;
@@ -270,6 +274,7 @@ int tls_peer_set_verify_host(struct tls_conn *tc, const char *hostname)
 
 	return err == 1 ? 0 : EINVAL;
 }
+#endif
 
 
 /**
