@@ -15,6 +15,7 @@ int sipreg_register(struct sipreg **regp, struct sip *sip, const char *reg_uri,
 		    sip_resp_h *resph, void *arg,
 		    const char *params, const char *fmt, ...);
 
-struct sa *get_via_received(const struct sip_msg *msg);
+const struct sa *get_via_received(const struct sip_msg *msg);
+const struct sa *sipreg_laddr(const struct sipreg *reg);
 
 uint32_t sipreg_get_expiretime_from_server(const struct sipreg *reg);
