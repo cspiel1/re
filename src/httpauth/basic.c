@@ -11,6 +11,31 @@
 #include <re_httpauth.h>
 
 
+#define DEBUG_MODULE "httpauth_basic"
+#define DEBUG_LEVEL 5
+#include <re_dbg.h>
+
+
+static void httpauth_basic_destr(void *arg)
+{
+	struct httpauth_basic *basic = arg;
+
+	mem_deref(basic->mb);
+}
+
+
+struct httpauth_basic *httpauth_basic_alloc(void)
+{
+	struct httpauth_basic *basic = mem_zalloc(sizeof(*basic),
+			httpauth_basic_destr);
+
+	if (!basic)
+		DEBUG_WARNING("could not allocate httpauth_basic\n");
+
+	return basic;
+}
+
+
 /**
  * Decode a Basic response
  *
@@ -40,6 +65,7 @@ int httpauth_basic_make_response(struct httpauth_basic *basic,
 	uint8_t *in;
 	char *out;
 	size_t si, so;
+	size_t poso;
 	int err;
 
 	if (!basic || !basic->mb || !user || !pwd)
@@ -47,18 +73,21 @@ int httpauth_basic_make_response(struct httpauth_basic *basic,
 
 	si = user->l + pwd->l + 1;
 	so = 4 * (si + 2) / 3;
-	err = mbuf_resize(basic->mb, si + so + 1 + 21);
+	err = mbuf_resize(basic->mb, si + so + 1);
 	if (err)
 		return err;
 
-	in = mbuf_buf(basic->mb);
 	err = mbuf_printf(basic->mb, "%r:%r", user, pwd);
+	poso = basic->mb->pos;
 
-	out = (char*) mbuf_buf(basic->mb);
 	err |= mbuf_fill(basic->mb, 0, so + 1);
 	if (err)
 		goto fault;
 
+	mbuf_set_pos(basic->mb, 0);
+	in = mbuf_buf(basic->mb);
+	mbuf_set_pos(basic->mb, poso);
+	out = (char*) mbuf_buf(basic->mb);
 	err = base64_encode(in, si, out, &so);
 	if (err)
 		goto fault;

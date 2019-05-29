@@ -54,6 +54,7 @@ int httpauth_digest_make_response(struct httpauth_digest_resp **resp,
 int httpauth_digest_response_encode(const struct httpauth_digest_resp *resp,
 				  struct mbuf *mb);
 
+struct httpauth_basic *httpauth_basic_alloc(void);
 int httpauth_basic_decode(struct httpauth_basic *basic,
 		const struct pl *hval);
 int httpauth_basic_make_response(struct httpauth_basic *basic,
