@@ -20,9 +20,10 @@ struct jbuf_stat {
 };
 
 
-int  jbuf_alloc(struct jbuf **jbp, uint32_t min, uint32_t max);
+int  jbuf_alloc(struct jbuf **jbp, uint32_t min, uint32_t max, uint32_t ptime);
 int  jbuf_put(struct jbuf *jb, const struct rtp_header *hdr, void *mem);
 int  jbuf_get(struct jbuf *jb, struct rtp_header *hdr, void **mem);
+void jbuf_silence(struct jbuf *jb, bool on);
 void jbuf_flush(struct jbuf *jb);
 int  jbuf_stats(const struct jbuf *jb, struct jbuf_stat *jstat);
 int  jbuf_debug(struct re_printf *pf, const struct jbuf *jb);
