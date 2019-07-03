@@ -454,7 +454,7 @@ USE_OPENSSL := $(shell [ -f $(SYSROOT)/include/openssl/ssl.h ] || \
 	[ -f $(SYSROOT_ALT)/include/openssl/ssl.h ] && echo "yes")
 
 ifneq ($(USE_OPENSSL),)
-CFLAGS  += -DUSE_OPENSSL -DUSE_TLS -I$(SYSROOT)/local/include
+CFLAGS  += -DUSE_OPENSSL -DUSE_TLS -DOPENSSL_API_COMPAT=0x10100000L -I$(SYSROOT)/local/include
 LIBS    += -L$(SYSROOT)/local/lib -lssl -lcrypto
 USE_TLS := yes
 
