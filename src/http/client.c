@@ -580,14 +580,18 @@ int http_uri_decode(struct http_uri *uri, const char* s)
 	memset(uri, 0, sizeof(*uri));
 
 	/* Try IPv6 first */
-	if (!re_regex(s, strlen(s), "[a-z]+://\\[[^\\]]+\\][:]*[0-9]*[^]+",
+	if (!re_regex(s, strlen(s), "[a-z]+://\\[[^\\]]+\\][:]*[0-9]*[^]*",
 		     &uri->scheme, &uri->host, NULL, &uri->port, &uri->path))
-		return uri->scheme.p != s;
+		goto out;
 
 	/* Then non-IPv6 host */
-	return re_regex(s, strlen(s), "[a-z]+://[^:/]+[:]*[0-9]*[^]+",
-		     &uri->scheme, &uri->host, NULL, &uri->port, &uri->path) ||
-			uri->scheme.p != s;
+	re_regex(s, strlen(s), "[a-z]+://[^:/]+[:]*[0-9]*[^]*",
+		     &uri->scheme, &uri->host, NULL, &uri->port, &uri->path);
+
+out:
+	if (!pl_isset(&uri->path))
+		pl_set_str(&uri->path, "/");
+	return uri->scheme.p != s;
 }
 
 
