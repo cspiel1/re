@@ -310,8 +310,11 @@ static bool recv_handler(int *err, struct mbuf *mb, bool *estab, void *arg)
 				break;
 
 			case SSL_ERROR_ZERO_RETURN:
-				*err = ECONNRESET;
-				return true;
+				if (!mb->pos) {
+					*err = ECONNRESET;
+					return true;
+				}
+				break;
 
 			default:
 				*err = EPROTO;
