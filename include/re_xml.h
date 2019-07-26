@@ -35,7 +35,7 @@ int xml_goto_value_end(struct mbuf *buf);
 int xml_add_prolog(struct mbuf *buf);
 int xml_add_key(struct mbuf *buf, const struct pl *key);
 int xml_add_key_param(struct mbuf *buf, const struct pl *key,
-		const struct pl *param, const struct pl *value);
+    const struct pl *param, const struct pl *value);
 int xml_add_ckey(struct mbuf *buf, const struct pl *key);
 
 
