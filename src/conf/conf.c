@@ -36,7 +36,23 @@ struct conf {
 };
 
 
-static int load_file(struct mbuf *mb, const char *filename)
+static void conf_destructor(void *data)
+{
+	struct conf *conf = data;
+
+	mem_deref(conf->mb);
+}
+
+
+/**
+ * Load file into memory buffer
+ *
+ * @param mb       memory buffer to store the information
+ * @param filename Name of configuration file
+ *
+ * @return 0 if success, otherwise errorcode
+ */
+int load_file(struct mbuf *mb, const char *filename)
 {
 	int err = 0, fd = open(filename, O_RDONLY);
 	if (fd < 0)
@@ -62,11 +78,31 @@ static int load_file(struct mbuf *mb, const char *filename)
 }
 
 
-static void conf_destructor(void *data)
+/**
+ * Clear the file and save memory buffer into file
+ *
+ * @param mb       memory buffer to store the information
+ * @param filename Name of configuration file
+ *
+ * @return 0 if success, otherwise errorcode
+ */
+int save_file(const struct mbuf *mb, const char *filename)
 {
-	struct conf *conf = data;
+	int fd = open(filename, O_TRUNC | O_WRONLY);
 
-	mem_deref(conf->mb);
+	size_t written = 0;
+	if (fd < 0)
+		return errno;
+
+	written = write(fd, mbuf_buf(mb), mbuf_get_left(mb));
+
+	if (written != mbuf_get_left(mb)) {
+		return errno;
+	}
+
+	(void)close(fd);
+
+	return 0;
 }
 
 
