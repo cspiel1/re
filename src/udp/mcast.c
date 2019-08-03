@@ -10,6 +10,7 @@
 #include <re_fmt.h>
 #include <re_sa.h>
 #include <re_udp.h>
+#include <net/if.h>
 
 
 static int multicast_update(struct udp_sock *us, const struct sa *group,

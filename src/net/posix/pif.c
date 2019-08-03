@@ -42,6 +42,7 @@
  */
 int net_if_getaddr4(const char *ifname, int af, struct sa *ip)
 {
+#ifdef SIOCGIFADDR
 	struct addrinfo hints, *res, *r;
 	int error, err;
 
@@ -86,6 +87,9 @@ int net_if_getaddr4(const char *ifname, int af, struct sa *ip)
 
 	freeaddrinfo(res);
 	return err;
+#else
+	return EINVAL;
+#endif
 }
 
 
@@ -101,6 +105,7 @@ int net_if_getaddr4(const char *ifname, int af, struct sa *ip)
  */
 int net_if_list(net_ifaddr_h *ifh, void *arg)
 {
+#ifdef SIOCGIFCONF
 	struct ifreq ifrv[32], *ifr;
 	struct ifconf ifc;
 	int sockfd = -1;
@@ -164,4 +169,7 @@ int net_if_list(net_ifaddr_h *ifh, void *arg)
 		(void)close(sockfd);
 
 	return err;
+#else
+	return EINVAL;
+#endif
 }

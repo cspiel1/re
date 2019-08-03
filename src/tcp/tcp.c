@@ -29,6 +29,7 @@
 #include <re_sa.h>
 #include <re_net.h>
 #include <re_tcp.h>
+#include <net/if.h>
 
 
 #define DEBUG_MODULE "tcp"
