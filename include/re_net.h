@@ -49,7 +49,7 @@ struct sa;
 int  net_hostaddr(int af, struct sa *ip);
 int  net_default_source_addr_get(int af, struct sa *ip);
 int  net_default_gateway_get(int af, struct sa *gw);
-
+int	 net_hostname(char *hostname, size_t len);
 
 /* Net sockets */
 int  net_sock_init(void);

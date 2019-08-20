@@ -155,3 +155,17 @@ int net_default_gateway_get(int af, struct sa *gw)
 
 	return 0;
 }
+
+
+/**
+ * Get the network hostname
+ *
+ * @param hostname  buffer for the hostname
+ * @param len 		size of @hostnmae
+ *
+ * @return 0 if success, otherwise errorcode
+ */
+int net_hostname(char *hostname, size_t len)
+{
+	return gethostname(hostname, len);
+}
