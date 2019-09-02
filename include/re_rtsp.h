@@ -119,7 +119,7 @@ const struct rtsp_hdr *rtsp_msg_hdr(const struct rtsp_msg *msg,
     enum rtsp_hdrid id);
 const struct rtsp_hdr *rtsp_msg_hdr_apply(const struct rtsp_msg *msg,
     bool fwd, enum rtsp_hdrid id, rtsp_hdr_h *h, void *arg);
-int rtsp_msg_print(struct re_printf *pf, const struct rtsp_msg *msg);
+int rtsp_msg_print(const struct rtsp_msg *msg);
 
 uint32_t rtsp_msg_hdr_count(const struct rtsp_msg *msg, enum rtsp_hdrid id);
 bool rtsp_msg_hdr_has_value(const struct rtsp_msg *msg, enum rtsp_hdrid id,

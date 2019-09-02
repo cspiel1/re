@@ -413,12 +413,11 @@ uint32_t rtsp_msg_hdr_count(const struct rtsp_msg *msg, enum rtsp_hdrid id)
 /**
  * Print a RTSP Message
  *
- * @param pf    Print function for output
  * @param msg   RTSP Message
  *
  * @return      0 if success, otherwise errorcode
  */
-int rtsp_msg_print(struct re_printf *pf, const struct rtsp_msg *msg)
+int rtsp_msg_print(const struct rtsp_msg *msg)
 {
     struct le *le;
     int err;
@@ -426,17 +425,20 @@ int rtsp_msg_print(struct re_printf *pf, const struct rtsp_msg *msg)
     if (!msg)
     return 0;
 
+    re_printf(" ######## RTSP MSG ######## \n");
     if (pl_isset(&msg->met))
-        err = re_hprintf(pf, "%r %r %r RTSP/%r\n", &msg->met, &msg->path,
+        err = re_printf("%r %r %r RTSP/%r\n", &msg->met, &msg->path,
             &msg->prm, &msg->ver);
     else
-        err = re_hprintf(pf, "RTSP/%r %u %r\n", &msg->ver,
+        err = re_printf("RTSP/%r %u %r\n", &msg->ver,
             msg->scode, &msg->reason);
 
     for (le = msg->hdrl.head; le; le = le->next) {
         const struct rtsp_hdr *hdr = le->data;
-        err |= re_hprintf(pf, "%r: %r (%i)\n", &hdr->name, &hdr->val, hdr->id);
+        err |= re_printf("%r: %r (%i)\n", &hdr->name, &hdr->val, hdr->id);
     }
+
+    re_printf(" ######## RTSP MSG DONE ######## \n");
 
     return err;
 }
