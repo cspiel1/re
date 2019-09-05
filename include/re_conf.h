@@ -10,6 +10,7 @@ struct conf;
 typedef int (conf_h)(const struct pl *val, void *arg);
 
 int load_file(struct mbuf *mb, const char *filename);
+int save_file(const struct mbuf *mb, const char *filename);
 
 int conf_alloc(struct conf **confp, const char *filename);
 int conf_alloc_buf(struct conf **confp, const uint8_t *buf, size_t sz);
