@@ -313,7 +313,7 @@ int stun_msg_vencode(struct mbuf *mb, uint16_t method, uint8_t class,
 		uint8_t mi[20];
 
 		mb->pos = start;
-		hmac_sha1(key, keylen, mbuf_buf(mb), mbuf_get_left(mb),
+		re_hmac_sha1(key, keylen, mbuf_buf(mb), mbuf_get_left(mb),
 			  mi, sizeof(mi));
 
 		mb->pos += STUN_HEADER_SIZE + hdr.len - MI_SIZE;
@@ -407,7 +407,7 @@ int stun_msg_chk_mi(const struct stun_msg *msg, const uint8_t *key,
 		msg->mb->pos -= STUN_HEADER_SIZE;
 	}
 
-	hmac_sha1(key, keylen, mbuf_buf(msg->mb),
+	re_hmac_sha1(key, keylen, mbuf_buf(msg->mb),
 		  STUN_HEADER_SIZE + msg->hdr.len - MI_SIZE,
 		  hmac, sizeof(hmac));
 

@@ -31,7 +31,7 @@
  * @param out Digest output
  * @param t   Size of digest output
  */
-void hmac_sha1(const uint8_t *k,  /* secret key */
+void re_hmac_sha1(const uint8_t *k,  /* secret key */
 	       size_t   lk,       /* length of the key in bytes */
 	       const uint8_t *d,  /* data */
 	       size_t   ld,       /* length of data in bytes */

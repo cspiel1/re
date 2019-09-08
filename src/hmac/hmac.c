@@ -57,7 +57,7 @@ int hmac_digest(struct hmac *hmac, uint8_t *md, size_t md_len,
 	if (!hmac || !md || !md_len || !data || !data_len)
 		return EINVAL;
 
-	hmac_sha1(hmac->key, hmac->key_len, data, data_len, md, md_len);
+	re_hmac_sha1(hmac->key, hmac->key_len, data, data_len, md, md_len);
 
 	return 0;
 }
