@@ -139,10 +139,10 @@ int rtsps_listen(struct rtsp_sock **sockp, const struct sa *laddr,
     const char *cert, rtsp_sock_msg_h sockmsgh, void *arg);
 
 
-struct tcp_sock *rtsp_sock_tcp(struct rtsp_sock *sock);
+struct tcp_sock *rtsp_sock_tcp(const struct rtsp_sock *sock);
 const struct sa *rtsp_conn_peer(const struct rtsp_conn *conn);
-struct tcp_conn *rtsp_conn_tcp(struct rtsp_conn *conn);
-struct tls_conn *rtsp_conn_tls(struct rtsp_conn *conn);
+struct tcp_conn *rtsp_conn_tcp(const struct rtsp_conn *conn);
+struct tls_conn *rtsp_conn_tls(const struct rtsp_conn *conn);
 void rtsp_conn_close(struct rtsp_conn *conn);
 
 int rtsp_reply(const struct rtsp_conn *conn, uint8_t ver, uint16_t scode,

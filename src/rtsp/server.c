@@ -340,7 +340,7 @@ int rtsps_listen(struct rtsp_sock **sockp, const struct sa *laddr,
 }
 
 
-struct tcp_sock *rtsp_sock_tcp(struct rtsp_sock *sock)
+struct tcp_sock *rtsp_sock_tcp(const struct rtsp_sock *sock)
 {
     return sock ? sock->ts : NULL;
 }
@@ -352,13 +352,13 @@ const struct sa *rtsp_conn_peer(const struct rtsp_conn *conn)
 }
 
 
-struct tcp_conn *rtsp_conn_tcp(struct rtsp_conn *conn)
+struct tcp_conn *rtsp_conn_tcp(const struct rtsp_conn *conn)
 {
     return conn ? conn->tc : NULL;
 }
 
 
-struct tls_conn *rtsp_conn_tls(struct rtsp_conn *conn)
+struct tls_conn *rtsp_conn_tls(const struct rtsp_conn *conn)
 {
     return conn ? conn->sc : NULL;
 }
