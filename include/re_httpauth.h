@@ -27,6 +27,7 @@ struct httpauth_digest_resp {
 	struct pl uri;
 
 	/* optional */
+	struct pl algorithm;
 	struct pl nc;
 	struct pl cnonce;
 	struct pl qop;

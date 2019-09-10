@@ -71,6 +71,8 @@ static void response_decode(const struct pl *name, const struct pl *val,
 		resp->cnonce = *val;
 	else if (!pl_casecmp(name, &param_qop))
 		resp->qop = *val;
+	else if (!pl_casecmp(name, &param_algorithm))
+		resp->algorithm = *val;
 }
 
 
