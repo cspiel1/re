@@ -38,7 +38,4 @@ int xml_add_key_param(struct mbuf *buf, const struct pl *key,
     const struct pl *param, const struct pl *value);
 int xml_add_ckey(struct mbuf *buf, const struct pl *key);
 
-
-
 #endif /* _RE_XML_H_ */
-

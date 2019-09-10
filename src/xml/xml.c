@@ -9,23 +9,23 @@
 
 /*LATER!*/
 /*TODO: The XML values and keys are UTF-8 encoded. Therefore i need an encoder
-    aswell as a decoder for the UTF-8 character set.
-    The begin and end character of a XML message is the '<' and
-    the '</' charater/string. Both are in the ascii code encoding. Searching
-    for these elements can be done with reading byte by byte.
+	aswell as a decoder for the UTF-8 character set.
+	The begin and end character of a XML message is the '<' and
+	the '</' charater/string. Both are in the ascii code encoding. Searching
+	for these elements can be done with reading byte by byte.
 */
 
 /*TODO: UTF-8 encoder to read the correct amount of bytes depending on
-    the character used: Read the first byte of the character.
-    0xxxxxxx - one	 byte
-    110xxxxx - two	 bytes
-    1110xxxx - three bytes
-    11110xxx - four  bytes
-    10xxxxxx - continuing bytes
+	the character used: Read the first byte of the character.
+	0xxxxxxx - one	 byte
+	110xxxxx - two	 bytes
+	1110xxxx - three bytes
+	11110xxx - four  bytes
+	10xxxxxx - continuing bytes
 
-    Counting the bytes needen for a utf-8 encoded string in the memory buffer
-    is to count every continouing byte (starts with 10xxxxxx)
-    */
+	Counting the bytes needen for a utf-8 encoded string in the memory buffer
+	is to count every continouing byte (starts with 10xxxxxx)
+	*/
 
 /**
  * find the next key in the XML data
@@ -35,32 +35,32 @@
  */
 int xml_next_key(struct mbuf *buf)
 {
-    int error = 0;
-    size_t pos = 0;
-    bool quote = false;
-    char symbol;
+	int error = 0;
+	size_t pos = 0;
+	bool quote = false;
+	char symbol;
 
-    if (!buf)
-        return EINVAL;
+	if (!buf)
+		return EINVAL;
 
-    pos = buf->pos;
-    while (!error) {
-        if (!mbuf_get_left(buf)) {
-            mbuf_set_pos(buf, pos);
-            return EOVERFLOW;
-        }
+	pos = buf->pos;
+	while (!error) {
+		if (!mbuf_get_left(buf)) {
+			mbuf_set_pos(buf, pos);
+			return EOVERFLOW;
+		}
 
-        symbol = mbuf_read_u8(buf);
-        if (symbol == '\"' || symbol == '\'') {
-            quote = !quote;
-            continue;
-        }
+		symbol = mbuf_read_u8(buf);
+		if (symbol == '\"' || symbol == '\'') {
+			quote = !quote;
+			continue;
+		}
 
-        if (symbol == '<' && !quote)
-            break;
-    }
+		if (symbol == '<' && !quote)
+			break;
+	}
 
-    return error;
+	return error;
 }
 
 /**
@@ -71,39 +71,39 @@ int xml_next_key(struct mbuf *buf)
  */
 int xml_prev_key(struct mbuf *buf)
 {
-    int error = 0;
-    size_t pos = 0;
-    bool quote = false;
-    char symbol;
+	int error = 0;
+	size_t pos = 0;
+	bool quote = false;
+	char symbol;
 
-    if (!buf)
-        return EINVAL;
+	if (!buf)
+		return EINVAL;
 
-    if (buf->pos == 1)
-        return EOVERFLOW;
+	if (buf->pos == 1)
+		return EOVERFLOW;
 
-    pos = buf->pos;
-    while (!error) {
-        if (!buf->pos) {
-            mbuf_set_pos(buf, pos);
-            return EOVERFLOW;
-        }
+	pos = buf->pos;
+	while (!error) {
+		if (!buf->pos) {
+			mbuf_set_pos(buf, pos);
+			return EOVERFLOW;
+		}
 
-        mbuf_advance(buf, -1);
-        symbol = mbuf_read_u8(buf);
-        if (symbol == '\"' || symbol == '\'') {
-            quote = !quote;
-            mbuf_advance(buf, -1);
-            continue;
-        }
+		mbuf_advance(buf, -1);
+		symbol = mbuf_read_u8(buf);
+		if (symbol == '\"' || symbol == '\'') {
+			quote = !quote;
+			mbuf_advance(buf, -1);
+			continue;
+		}
 
-        if (symbol == '<' && !(pos == buf->pos) && !quote)
-            break;
+		if (symbol == '<' && !(pos == buf->pos) && !quote)
+			break;
 
-        mbuf_advance(buf, -1);
-    }
+		mbuf_advance(buf, -1);
+	}
 
-    return error;
+	return error;
 }
 
 /**
@@ -114,32 +114,32 @@ int xml_prev_key(struct mbuf *buf)
  */
 static int xml_skip_to(struct mbuf *buf, const char c)
 {
-    int error = 0;
-    size_t pos = 0;
-    bool quote = false;
-    char symbol;
+	int error = 0;
+	size_t pos = 0;
+	bool quote = false;
+	char symbol;
 
-    if (!buf)
-        return EINVAL;
+	if (!buf)
+		return EINVAL;
 
-    pos = buf->pos;
-    while (!error) {
-        if (!mbuf_get_left(buf)) {
-            mbuf_set_pos(buf, pos);
-            return EOVERFLOW;
-        }
+	pos = buf->pos;
+	while (!error) {
+		if (!mbuf_get_left(buf)) {
+			mbuf_set_pos(buf, pos);
+			return EOVERFLOW;
+		}
 
-        symbol = mbuf_read_u8(buf);
-        if (symbol == '\"' || symbol == '\'') {
-            quote = !quote;
-            continue;
-        }
+		symbol = mbuf_read_u8(buf);
+		if (symbol == '\"' || symbol == '\'') {
+			quote = !quote;
+			continue;
+		}
 
-        if (symbol == c && !quote)
-            break;
-    }
+		if (symbol == c && !quote)
+			break;
+	}
 
-    return error;
+	return error;
 }
 
 /**
@@ -150,7 +150,7 @@ static int xml_skip_to(struct mbuf *buf, const char c)
  */
 int xml_skip_to_end(struct mbuf *buf)
 {
-    return xml_skip_to(buf, '>');
+	return xml_skip_to(buf, '>');
 }
 
 /**
@@ -161,15 +161,15 @@ int xml_skip_to_end(struct mbuf *buf)
  */
 int xml_skip_to_begin(struct mbuf *buf)
 {
-    size_t bpos = buf->pos;
+	size_t bpos = buf->pos;
 
-    int err = xml_skip_to(buf, '<');
-    if (!err)
-        mbuf_advance(buf, -1);
-    else
-        mbuf_set_pos(buf, bpos);
+	int err = xml_skip_to(buf, '<');
+	if (!err)
+		mbuf_advance(buf, -1);
+	else
+		mbuf_set_pos(buf, bpos);
 
-    return err;
+	return err;
 }
 
 
@@ -181,37 +181,37 @@ int xml_skip_to_begin(struct mbuf *buf)
  */
 int xml_skip_to_ws(struct mbuf *buf)
 {
-    int error = 0;
-    size_t pos = 0;
-    bool quote = false;
-    char symbol;
+	int error = 0;
+	size_t pos = 0;
+	bool quote = false;
+	char symbol;
 
-    if (!buf)
-        return EINVAL;
+	if (!buf)
+		return EINVAL;
 
-    pos = buf->pos;
-    while (!error) {
-        if (!mbuf_get_left(buf)) {
-            mbuf_set_pos(buf, pos);
-            return EOVERFLOW;
-        }
+	pos = buf->pos;
+	while (!error) {
+		if (!mbuf_get_left(buf)) {
+			mbuf_set_pos(buf, pos);
+			return EOVERFLOW;
+		}
 
-        symbol = mbuf_read_u8(buf);
-        if (symbol == '\"' || symbol == '\'') {
-            quote = !quote;
-            continue;
-        }
+		symbol = mbuf_read_u8(buf);
+		if (symbol == '\"' || symbol == '\'') {
+			quote = !quote;
+			continue;
+		}
 
-        if ((symbol == '>') && !quote) {
-            mbuf_set_pos(buf, pos);
-            return EOF;
-        }
+		if ((symbol == '>') && !quote) {
+			mbuf_set_pos(buf, pos);
+			return EOF;
+		}
 
-        if ((symbol == ' ') && !quote)
-            break;
-    }
+		if ((symbol == ' ') && !quote)
+			break;
+	}
 
-    return error;
+	return error;
 }
 
 /**
@@ -223,20 +223,20 @@ int xml_skip_to_ws(struct mbuf *buf)
  */
 int xml_is_close_key(struct mbuf *buf, bool *ck)
 {
-    if (!buf || !ck)
-        return EINVAL;
+	if (!buf || !ck)
+		return EINVAL;
 
-    if (!mbuf_get_left(buf))
-        return EOVERFLOW;
+	if (!mbuf_get_left(buf))
+		return EOVERFLOW;
 
-    if (mbuf_read_u8(buf) == '/') {
-        *ck = true;
-    } else {
-        *ck = false;
-    }
-    mbuf_advance(buf, -1);
+	if (mbuf_read_u8(buf) == '/') {
+		*ck = true;
+	} else {
+		*ck = false;
+	}
+	mbuf_advance(buf, -1);
 
-    return 0;
+	return 0;
 }
 
 
@@ -249,27 +249,27 @@ int xml_is_close_key(struct mbuf *buf, bool *ck)
  */
 int xml_is_startclose_key(struct mbuf *buf, bool *ck)
 {
-    int err = 0;
+	int err = 0;
 
-    if (!buf || !ck)
-        return EINVAL;
+	if (!buf || !ck)
+		return EINVAL;
 
-    if (!mbuf_get_left(buf))
-        return EOVERFLOW;
+	if (!mbuf_get_left(buf))
+		return EOVERFLOW;
 
-    err = xml_skip_to_end(buf);
-    if (err)
-        return err;
+	err = xml_skip_to_end(buf);
+	if (err)
+		return err;
 
-    mbuf_advance(buf, -2);
-    if (mbuf_read_u8(buf) == '/') {
-        *ck = true;
-    } else {
-        *ck = false;
-    }
+	mbuf_advance(buf, -2);
+	if (mbuf_read_u8(buf) == '/') {
+		*ck = true;
+	} else {
+		*ck = false;
+	}
 
-    mbuf_advance(buf, 1);
-    return 0;
+	mbuf_advance(buf, 1);
+	return 0;
 }
 
 
@@ -281,32 +281,32 @@ int xml_is_startclose_key(struct mbuf *buf, bool *ck)
  */
 int xml_get_child(struct mbuf *buf)
 {
-    int error = 0;
-    size_t pos = 0;
-    bool ck = false;
+	int error = 0;
+	size_t pos = 0;
+	bool ck = false;
 
-    if (!buf)
-        return EINVAL;
+	if (!buf)
+		return EINVAL;
 
-    pos = buf->pos;
-    error = xml_next_key(buf);
-    if (error)
-        return error;
+	pos = buf->pos;
+	error = xml_next_key(buf);
+	if (error)
+		return error;
 
-    error = xml_is_close_key(buf, &ck);
-    if (error)
-        goto OUT;
+	error = xml_is_close_key(buf, &ck);
+	if (error)
+		goto OUT;
 
-    if (ck) {
-        error = EOVERFLOW;
-        goto OUT;
-    }
+	if (ck) {
+		error = EOVERFLOW;
+		goto OUT;
+	}
 
 OUT:
-    if (error)
-        mbuf_set_pos(buf, pos);
+	if (error)
+		mbuf_set_pos(buf, pos);
 
-    return error;
+	return error;
 }
 
 /**
@@ -317,32 +317,32 @@ OUT:
  */
 int xml_get_parent(struct mbuf *buf)
 {
-    int error = 0;
-    size_t pos = 0;
-    bool ck = false;
+	int error = 0;
+	size_t pos = 0;
+	bool ck = false;
 
-    if (!buf)
-        return EINVAL;
+	if (!buf)
+		return EINVAL;
 
-    pos = buf->pos;
-    error = xml_prev_key(buf);
-    if (error)
-        return error;
+	pos = buf->pos;
+	error = xml_prev_key(buf);
+	if (error)
+		return error;
 
-    error = xml_is_close_key(buf, &ck);
-    if (error)
-        goto OUT;
+	error = xml_is_close_key(buf, &ck);
+	if (error)
+		goto OUT;
 
-    if (ck) {
-        error = EOVERFLOW;
-        goto OUT;
-    }
+	if (ck) {
+		error = EOVERFLOW;
+		goto OUT;
+	}
 
 OUT:
-    if (error)
-        mbuf_set_pos(buf, pos);
+	if (error)
+		mbuf_set_pos(buf, pos);
 
-    return error;
+	return error;
 }
 
 /**
@@ -356,54 +356,54 @@ OUT:
  */
 int xml_cmp_key(struct mbuf *buf, const char *cmp, size_t n)
 {
-    bool ck;
-    int error = 0;
-    int cmp_res = 0;
-    size_t pos = 0;
-    size_t pos_end = 0;
-    size_t pos_ws = 0;
+	bool ck;
+	int error = 0;
+	int cmp_res = 0;
+	size_t pos = 0;
+	size_t pos_end = 0;
+	size_t pos_ws = 0;
 
-    if (!buf || !cmp)
-        return EINVAL;
+	if (!buf || !cmp)
+		return EINVAL;
 
-    pos = buf->pos;
-    error = xml_is_close_key(buf, &ck);
-    if (error)
-        return error;
+	pos = buf->pos;
+	error = xml_is_close_key(buf, &ck);
+	if (error)
+		return error;
 
-    if (ck)
-        mbuf_advance(buf, 1);
+	if (ck)
+		mbuf_advance(buf, 1);
 
-    error = xml_skip_to_end(buf);
-    if (error)
-        return error;
+	error = xml_skip_to_end(buf);
+	if (error)
+		return error;
 
-    pos_end = buf->pos - 1;
-    mbuf_set_pos(buf, pos);
-    error = xml_skip_to_ws(buf);
-    if (!error)
-        pos_ws = buf->pos - 1;
-    else if (error == EOF)
-        pos_ws = pos_end;
-    else
-        return error;
+	pos_end = buf->pos - 1;
+	mbuf_set_pos(buf, pos);
+	error = xml_skip_to_ws(buf);
+	if (!error)
+		pos_ws = buf->pos - 1;
+	else if (error == EOF)
+		pos_ws = pos_end;
+	else
+		return error;
 
-    mbuf_set_pos(buf, pos);
+	mbuf_set_pos(buf, pos);
 
-    if (!ck) {
-        if ((pos_end - pos) != n && (pos_ws - pos) != n)
-            return EBADMSG;
+	if (!ck) {
+		if ((pos_end - pos) != n && (pos_ws - pos) != n)
+			return EBADMSG;
 
-        cmp_res = memcmp(mbuf_buf(buf), cmp, n);
-    }
-    else {
-        if ((pos_end - pos - 1) != n )
-            return EBADMSG;
+		cmp_res = memcmp(mbuf_buf(buf), cmp, n);
+	}
+	else {
+		if ((pos_end - pos - 1) != n )
+			return EBADMSG;
 
-        cmp_res = memcmp(mbuf_buf(buf) + 1, cmp, n);
-    }
+		cmp_res = memcmp(mbuf_buf(buf) + 1, cmp, n);
+	}
 
-    return cmp_res;
+	return cmp_res;
 }
 
 /**
@@ -414,25 +414,25 @@ int xml_cmp_key(struct mbuf *buf, const char *cmp, size_t n)
  */
 int xml_skip_prolog(struct mbuf *buf)
 {
-    int error = 0;
-    size_t bpos;
+	int error = 0;
+	size_t bpos;
 
-    if (!buf)
-        return EINVAL;
+	if (!buf)
+		return EINVAL;
 
-    mbuf_set_pos(buf, 0);
-    xml_skip_to_begin(buf);
-    bpos = buf->pos;
+	mbuf_set_pos(buf, 0);
+	xml_skip_to_begin(buf);
+	bpos = buf->pos;
 
-    if (mbuf_read_u8(buf) == '<' && mbuf_read_u8(buf) == '?') {
-        error = xml_skip_to_end(buf);
-        if (error)
-            return error;
-    } else {
-        mbuf_set_pos(buf, bpos);
-    }
+	if (mbuf_read_u8(buf) == '<' && mbuf_read_u8(buf) == '?') {
+		error = xml_skip_to_end(buf);
+		if (error)
+			return error;
+	} else {
+		mbuf_set_pos(buf, bpos);
+	}
 
-    return 0;
+	return 0;
 }
 
 /**
@@ -443,16 +443,16 @@ int xml_skip_prolog(struct mbuf *buf)
  */
 int xml_next_param(struct mbuf *buf)
 {
-    int error = 0;
+	int error = 0;
 
-    if (!buf)
-        return EINVAL;
+	if (!buf)
+		return EINVAL;
 
-    error = xml_skip_to_ws(buf);
-    if (error)
-        return error;
+	error = xml_skip_to_ws(buf);
+	if (error)
+		return error;
 
-    return 0;
+	return 0;
 }
 
 /**
@@ -463,45 +463,45 @@ int xml_next_param(struct mbuf *buf)
  */
 int xml_prev_param(struct mbuf *buf)
 {
-    int error = 0;
-    size_t pos = 0;
-    bool quote = false;
-    char symbol;
+	int error = 0;
+	size_t pos = 0;
+	bool quote = false;
+	char symbol;
 
-    if (!buf)
-        return EINVAL;
+	if (!buf)
+		return EINVAL;
 
-    if (buf->pos == 1)
-        return EOVERFLOW;
+	if (buf->pos == 1)
+		return EOVERFLOW;
 
-    pos = buf->pos;
-    while (!error) {
-        if (!buf->pos) {
-            mbuf_set_pos(buf, pos);
-            return EOVERFLOW;
-        }
+	pos = buf->pos;
+	while (!error) {
+		if (!buf->pos) {
+			mbuf_set_pos(buf, pos);
+			return EOVERFLOW;
+		}
 
-        mbuf_advance(buf, -1);
-        symbol = mbuf_read_u8(buf);
-        if (symbol == '\"' || symbol == '\'') {
-            quote = !quote;
-            mbuf_advance(buf, -1);
-            continue;
-        }
+		mbuf_advance(buf, -1);
+		symbol = mbuf_read_u8(buf);
+		if (symbol == '\"' || symbol == '\'') {
+			quote = !quote;
+			mbuf_advance(buf, -1);
+			continue;
+		}
 
-        if ((symbol == '<' || symbol == '>' || symbol == '/') &&
-                !(pos == buf->pos) && !quote) {
-            mbuf_set_pos(buf, pos);
-            return EOF;
-        }
+		if ((symbol == '<' || symbol == '>' || symbol == '/') &&
+				!(pos == buf->pos) && !quote) {
+			mbuf_set_pos(buf, pos);
+			return EOF;
+		}
 
-        if (symbol == ' ' && !(pos == buf->pos) && !quote)
-            break;
+		if (symbol == ' ' && !(pos == buf->pos) && !quote)
+			break;
 
-        mbuf_advance(buf, -1);
-    }
+		mbuf_advance(buf, -1);
+	}
 
-    return error;
+	return error;
 }
 
 /**
@@ -513,32 +513,32 @@ int xml_prev_param(struct mbuf *buf)
  */
 int xml_goto_value(struct mbuf *buf)
 {
-    int error = 0;
-    size_t pos = 0;
-    bool quote = false;
-    char symbol;
+	int error = 0;
+	size_t pos = 0;
+	bool quote = false;
+	char symbol;
 
-    if (!buf)
-        return EINVAL;
+	if (!buf)
+		return EINVAL;
 
-    pos = buf->pos;
-    while (!error) {
-        if (!mbuf_get_left(buf)) {
-            mbuf_set_pos(buf, pos);
-            return EOVERFLOW;
-        }
+	pos = buf->pos;
+	while (!error) {
+		if (!mbuf_get_left(buf)) {
+			mbuf_set_pos(buf, pos);
+			return EOVERFLOW;
+		}
 
-        symbol = mbuf_read_u8(buf);
-        if (symbol == '\"' || symbol == '\'') {
-            quote = !quote;
-            continue;
-        }
+		symbol = mbuf_read_u8(buf);
+		if (symbol == '\"' || symbol == '\'') {
+			quote = !quote;
+			continue;
+		}
 
-        if (symbol == '=' && !quote)
-            break;
-    }
+		if (symbol == '=' && !quote)
+			break;
+	}
 
-    return error;
+	return error;
 }
 
 /**
@@ -549,26 +549,26 @@ int xml_goto_value(struct mbuf *buf)
  */
 int xml_goto_value_begin(struct mbuf *buf)
 {
-    int error = 0;
-    size_t pos = 0;
-    char symbol;
+	int error = 0;
+	size_t pos = 0;
+	char symbol;
 
-    if (!buf)
-        return EINVAL;
+	if (!buf)
+		return EINVAL;
 
-    pos = buf->pos;
-    while (!error) {
-        if (!mbuf_get_left(buf)) {
-            mbuf_set_pos(buf, pos);
-            return EOVERFLOW;
-        }
+	pos = buf->pos;
+	while (!error) {
+		if (!mbuf_get_left(buf)) {
+			mbuf_set_pos(buf, pos);
+			return EOVERFLOW;
+		}
 
-        symbol = mbuf_read_u8(buf);
-        if (symbol == '\"' || symbol == '\'')
-            break;
-    }
+		symbol = mbuf_read_u8(buf);
+		if (symbol == '\"' || symbol == '\'')
+			break;
+	}
 
-    return error;
+	return error;
 }
 
 /**
@@ -579,31 +579,31 @@ int xml_goto_value_begin(struct mbuf *buf)
  */
 int xml_goto_value_end(struct mbuf *buf)
 {
-    int error = 0;
-    size_t pos = 0;
-    char symbol;
+	int error = 0;
+	size_t pos = 0;
+	char symbol;
 
-    if (!buf)
-        return EINVAL;
+	if (!buf)
+		return EINVAL;
 
-    pos = buf->pos;
-    while (!error) {
-        if (!mbuf_get_left(buf)) {
-            mbuf_set_pos(buf, pos);
-            return EOVERFLOW;
-        }
+	pos = buf->pos;
+	while (!error) {
+		if (!mbuf_get_left(buf)) {
+			mbuf_set_pos(buf, pos);
+			return EOVERFLOW;
+		}
 
-        symbol = mbuf_read_u8(buf);
-        if (symbol == '\"' || symbol == '\'') {
-            if (buf->pos > 0)
-                mbuf_advance(buf, -1);
-            else
-                return EINVAL;
-            break;
-        }
-    }
+		symbol = mbuf_read_u8(buf);
+		if (symbol == '\"' || symbol == '\'') {
+			if (buf->pos > 0)
+				mbuf_advance(buf, -1);
+			else
+				return EINVAL;
+			break;
+		}
+	}
 
-    return error;
+	return error;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -616,21 +616,21 @@ int xml_goto_value_end(struct mbuf *buf)
  */
 int xml_add_prolog(struct mbuf *buf)
 {
-    int error = 0;
-    const char xml_prolog [] = "<?xml version=\"1.0\"?>\n";
+	int error = 0;
+	const char xml_prolog [] = "<?xml version=\"1.0\"?>\n";
 
-    if (!buf || !(buf->pos == 0))
-        return EINVAL;
+	if (!buf || !(buf->pos == 0))
+		return EINVAL;
 
-    if (mbuf_get_space(buf) < strlen(xml_prolog)) {
-        error = mbuf_resize(buf, (strlen(xml_prolog) + XML_BUFFER_GROWTH + buf->size));
-        if (error)
-            return error;
-    }
+	if (mbuf_get_space(buf) < strlen(xml_prolog)) {
+		error = mbuf_resize(buf, (strlen(xml_prolog) + XML_BUFFER_GROWTH + buf->size));
+		if (error)
+			return error;
+	}
 
-    error = mbuf_write_mem(buf, (uint8_t*)xml_prolog, sizeof(xml_prolog) - 1);
+	error = mbuf_write_mem(buf, (uint8_t*)xml_prolog, sizeof(xml_prolog) - 1);
 
-    return error;
+	return error;
 }
 
 /**
@@ -643,25 +643,25 @@ int xml_add_prolog(struct mbuf *buf)
  */
 int xml_add_key(struct mbuf *buf, const struct pl *key)
 {
-    int error = 0;
-    int min_growth = 0;
+	int error = 0;
+	int min_growth = 0;
 
-    if (!buf || !key)
-        return EINVAL;
+	if (!buf || !key)
+		return EINVAL;
 
-    if (mbuf_get_space(buf) < (key->l + XML_KEY_SYMBOLS)) {
-        min_growth = (key->l + XML_KEY_SYMBOLS) > XML_BUFFER_GROWTH ? key->l + 2 :
-                                    XML_BUFFER_GROWTH;
-        error = mbuf_resize(buf, (buf->size + min_growth));
-        if (error)
-            return error;
-    }
+	if (mbuf_get_space(buf) < (key->l + XML_KEY_SYMBOLS)) {
+		min_growth = (key->l + XML_KEY_SYMBOLS) > XML_BUFFER_GROWTH ? key->l + 2 :
+									XML_BUFFER_GROWTH;
+		error = mbuf_resize(buf, (buf->size + min_growth));
+		if (error)
+			return error;
+	}
 
-    error = mbuf_write_u8(buf, '<');
-    error |= mbuf_write_pl(buf, key);
-    error |= mbuf_write_u8(buf, '>');
+	error = mbuf_write_u8(buf, '<');
+	error |= mbuf_write_pl(buf, key);
+	error |= mbuf_write_u8(buf, '>');
 
-    return error;
+	return error;
 }
 
 /**
@@ -676,36 +676,36 @@ int xml_add_key(struct mbuf *buf, const struct pl *key)
  * @return				 0 if success, error code otherwise
  */
 int xml_add_key_param(struct mbuf *buf, const struct pl *key,
-    const struct pl *param, const struct pl *value)
+	const struct pl *param, const struct pl *value)
 {
-    int error = 0;
-    int min_growth = 0;
-    size_t size;
+	int error = 0;
+	int min_growth = 0;
+	size_t size;
 
-    if (!buf || !key || !param)
-        return EINVAL;
+	if (!buf || !key || !param)
+		return EINVAL;
 
-    size = key->l + param->l + value->l + XML_KEY_SYMBOLS
-        + XML_V_SYMBOLS(value->l);
-    if (mbuf_get_space(buf) < size) {
-        min_growth = size > XML_BUFFER_GROWTH ? size : XML_BUFFER_GROWTH;
-        error = mbuf_resize(buf, (buf->size + min_growth));
-        if (error)
-            return error;
-    }
+	size = key->l + param->l + value->l + XML_KEY_SYMBOLS
+		+ XML_V_SYMBOLS(value->l);
+	if (mbuf_get_space(buf) < size) {
+		min_growth = size > XML_BUFFER_GROWTH ? size : XML_BUFFER_GROWTH;
+		error = mbuf_resize(buf, (buf->size + min_growth));
+		if (error)
+			return error;
+	}
 
-    error = mbuf_write_u8(buf, '<');
-    error |= mbuf_write_pl(buf, key);
-    error |= mbuf_write_u8(buf, ' ');
-    error |= mbuf_write_pl(buf, param);
-    if (value) {
-        error |= mbuf_write_u8(buf, '=');
-        error |= mbuf_write_pl(buf, value);
-    }
+	error = mbuf_write_u8(buf, '<');
+	error |= mbuf_write_pl(buf, key);
+	error |= mbuf_write_u8(buf, ' ');
+	error |= mbuf_write_pl(buf, param);
+	if (value) {
+		error |= mbuf_write_u8(buf, '=');
+		error |= mbuf_write_pl(buf, value);
+	}
 
-    error |= mbuf_write_u8(buf, '>');
+	error |= mbuf_write_u8(buf, '>');
 
-    return error;
+	return error;
 }
 
 
@@ -719,25 +719,25 @@ int xml_add_key_param(struct mbuf *buf, const struct pl *key,
  */
 int xml_add_ckey(struct mbuf *buf, const struct pl *key)
 {
-    int error = 0;
-    int min_growth = 0;
+	int error = 0;
+	int min_growth = 0;
 
-    if (!buf || !key)
-        return EINVAL;
+	if (!buf || !key)
+		return EINVAL;
 
-    if (mbuf_get_space(buf) < (key->l + XML_CKEY_SYMBOLS)) {
-        min_growth = (key->l + XML_CKEY_SYMBOLS) > XML_BUFFER_GROWTH ? key->l + 2
-                                    : XML_BUFFER_GROWTH;
-        error = mbuf_resize(buf, (buf->size + min_growth));
-        if (error)
-            return error;
-    }
+	if (mbuf_get_space(buf) < (key->l + XML_CKEY_SYMBOLS)) {
+		min_growth = (key->l + XML_CKEY_SYMBOLS) > XML_BUFFER_GROWTH ? key->l + 2
+									: XML_BUFFER_GROWTH;
+		error = mbuf_resize(buf, (buf->size + min_growth));
+		if (error)
+			return error;
+	}
 
-    error = mbuf_write_u8(buf, '<');
-    error |= mbuf_write_u8(buf, '/');
-    error |= mbuf_write_pl(buf, key);
-    error |= mbuf_write_u8(buf, '>');
+	error = mbuf_write_u8(buf, '<');
+	error |= mbuf_write_u8(buf, '/');
+	error |= mbuf_write_pl(buf, key);
+	error |= mbuf_write_u8(buf, '>');
 
-    return error;
+	return error;
 }
 
