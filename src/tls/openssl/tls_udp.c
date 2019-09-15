@@ -165,7 +165,7 @@ static BIO_METHOD *bio_method_udp(void)
 {
 	BIO_METHOD *method;
 
-	method = BIO_meth_new(BIO_TYPE_SOURCE_SINK, "udp_send");
+	method = BIO_meth_new(BIO_TYPE_SOURCE_SINK, "re_udp_send");
 	if (!method) {
 		DEBUG_WARNING("alloc: BIO_meth_new() failed\n");
 		ERR_clear_error();
@@ -184,7 +184,7 @@ static BIO_METHOD *bio_method_udp(void)
 
 static struct bio_method_st bio_udp_send = {
 	BIO_TYPE_SOURCE_SINK,
-	"udp_send",
+	"re_udp_send",
 	bio_write,
 	0,
 	0,

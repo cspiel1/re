@@ -494,7 +494,7 @@ static int tcpconn_alloc(struct tcpconn **tcpp, struct dnsc *dnsc,
 	if (!tc->mb)
 		goto out;
 
-	err = tcp_connect(&tc->conn, srv, tcp_estab_handler,
+	err = re_tcp_connect(&tc->conn, srv, tcp_estab_handler,
 			  tcp_recv_handler, tcp_close_handler, tc);
 	if (err)
 		goto out;
@@ -583,7 +583,7 @@ static int send_udp(struct dns_query *q)
 		DEBUG_INFO("trying udp server#%u: %J\n", i, srv);
 
 		q->mb.pos = 0;
-		err = udp_send(q->dnsc->us, srv, &q->mb);
+		err = re_udp_send(q->dnsc->us, srv, &q->mb);
 		if (!err)
 			break;
 	}

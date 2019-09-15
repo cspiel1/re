@@ -514,7 +514,7 @@ static void tcp_connect_handler(const struct sa *paddr, void *arg)
 	conn->paddr = *paddr;
 	conn->sip   = transp->sip;
 
-	err = tcp_accept(&conn->tc, transp->sock, tcp_estab_handler,
+	err = re_tcp_accept(&conn->tc, transp->sock, tcp_estab_handler,
 			 tcp_recv_handler, tcp_close_handler, conn);
 	if (err)
 		goto out;
@@ -566,7 +566,7 @@ static int conn_send(struct sip_connqent **qentp, struct sip *sip, bool secure,
 	conn->paddr = *dst;
 	conn->sip   = sip;
 
-	err = tcp_connect(&conn->tc, dst, tcp_estab_handler, tcp_recv_handler,
+	err = re_tcp_connect(&conn->tc, dst, tcp_estab_handler, tcp_recv_handler,
 			  tcp_close_handler, conn);
 	if (err)
 		goto out;
@@ -739,7 +739,7 @@ int sip_transp_send(struct sip_connqent **qentp, struct sip *sip, void *sock,
 			sock = transp->sock;
 		}
 
-		err = udp_send(sock, dst, mb);
+		err = re_udp_send(sock, dst, mb);
 		break;
 
 	case SIP_TRANSP_TLS:

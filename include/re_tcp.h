@@ -52,7 +52,7 @@ int  tcp_sock_alloc(struct tcp_sock **tsp, const struct sa *local,
 		    tcp_conn_h *ch, void *arg);
 int  tcp_sock_bind(struct tcp_sock *ts, const struct sa *local);
 int  tcp_sock_listen(struct tcp_sock *ts, int backlog);
-int  tcp_accept(struct tcp_conn **tcp, struct tcp_sock *ts, tcp_estab_h *eh,
+int  re_tcp_accept(struct tcp_conn **tcp, struct tcp_sock *ts, tcp_estab_h *eh,
 		tcp_recv_h *rh, tcp_close_h *ch, void *arg);
 void tcp_reject(struct tcp_sock *ts);
 int  tcp_sock_local_get(const struct tcp_sock *ts, struct sa *local);
@@ -79,7 +79,7 @@ size_t tcp_conn_txqsz(const struct tcp_conn *tc);
 /* High-level API */
 int  tcp_listen(struct tcp_sock **tsp, const struct sa *local,
 		tcp_conn_h *ch, void *arg);
-int  tcp_connect(struct tcp_conn **tcp, const struct sa *peer,
+int  re_tcp_connect(struct tcp_conn **tcp, const struct sa *peer,
 		 tcp_estab_h *eh, tcp_recv_h *rh, tcp_close_h *ch, void *arg);
 int  tcp_local_get(const struct tcp_sock *ts, struct sa *local);
 

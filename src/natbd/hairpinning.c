@@ -198,7 +198,7 @@ static void tcp_conn_handler(const struct sa *peer, void *arg)
 
 	(void)peer;
 
-	err = tcp_accept(&nh->tc2, nh->ts, NULL, tcp_recv_handler2,
+	err = re_tcp_accept(&nh->tc2, nh->ts, NULL, tcp_recv_handler2,
 			 tcp_close_handler2, nh);
 	if (err) {
 		DEBUG_WARNING("TCP conn: tcp_accept: %m\n", err);

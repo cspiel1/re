@@ -431,7 +431,7 @@ static int conn_connect(struct http_req *req)
 	conn->addr = *addr;
 	conn->usec = 1;
 
-	err = tcp_connect(&conn->tc, addr, estab_handler, recv_handler,
+	err = re_tcp_connect(&conn->tc, addr, estab_handler, recv_handler,
 			  close_handler, conn);
 	if (err)
 		goto out;

@@ -218,7 +218,7 @@ static void connect_handler(const struct sa *peer, void *arg)
 	conn->peer = *peer;
 	conn->sock = sock;
 
-	err = tcp_accept(&conn->tc, sock->ts, NULL, recv_handler,
+	err = re_tcp_accept(&conn->tc, sock->ts, NULL, recv_handler,
 			 close_handler, conn);
 	if (err)
 		goto out;

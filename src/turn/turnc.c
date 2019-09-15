@@ -531,7 +531,7 @@ int turnc_send(struct turnc *turnc, const struct sa *dst, struct mbuf *mb)
 	switch (turnc->proto) {
 
 	case IPPROTO_UDP:
-		err = udp_send(turnc->sock, &turnc->srv, mb);
+		err = re_udp_send(turnc->sock, &turnc->srv, mb);
 		break;
 
 	case IPPROTO_TCP:

@@ -103,7 +103,7 @@ int stun_send(int proto, void *sock, const struct sa *dst, struct mbuf *mb)
 	switch (proto) {
 
 	case IPPROTO_UDP:
-		err = udp_send(sock, dst, mb);
+		err = re_udp_send(sock, dst, mb);
 		break;
 
 	case IPPROTO_TCP:

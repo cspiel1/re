@@ -62,7 +62,7 @@ int tcp_listen(struct tcp_sock **tsp, const struct sa *local,
  *
  * @return 0 if success, otherwise errorcode
  */
-int tcp_connect(struct tcp_conn **tcp, const struct sa *peer,
+int re_tcp_connect(struct tcp_conn **tcp, const struct sa *peer,
 		tcp_estab_h *eh, tcp_recv_h *rh, tcp_close_h *ch, void *arg)
 {
 	struct tcp_conn *tc = NULL;

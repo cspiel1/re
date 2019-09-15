@@ -452,7 +452,7 @@ int rtp_send(struct rtp_sock *rs, const struct sa *dst, bool ext,
 
 	mb->pos = pos;
 
-	return udp_send(rs->sock_rtp, dst, mb);
+	return re_udp_send(rs->sock_rtp, dst, mb);
 }
 
 
@@ -569,7 +569,7 @@ int rtcp_send(struct rtp_sock *rs, struct mbuf *mb)
 	if (!rs || !rs->sock_rtcp || !sa_isset(&rs->rtcp_peer, SA_ALL))
 		return EINVAL;
 
-	return udp_send(rs->rtcp_mux ? rs->sock_rtp : rs->sock_rtcp,
+	return re_udp_send(rs->rtcp_mux ? rs->sock_rtp : rs->sock_rtcp,
 			&rs->rtcp_peer, mb);
 }
 

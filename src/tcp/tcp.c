@@ -755,7 +755,7 @@ int tcp_sock_listen(struct tcp_sock *ts, int backlog)
  *
  * @return 0 if success, otherwise errorcode
  */
-int tcp_accept(struct tcp_conn **tcp, struct tcp_sock *ts, tcp_estab_h *eh,
+int re_tcp_accept(struct tcp_conn **tcp, struct tcp_sock *ts, tcp_estab_h *eh,
 	       tcp_recv_h *rh, tcp_close_h *ch, void *arg)
 {
 	struct tcp_conn *tc;

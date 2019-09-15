@@ -142,7 +142,7 @@ int bfcp_send(struct bfcp_conn *bc, const struct sa *dst, struct mbuf *mb)
 	switch (bc->tp) {
 
 	case BFCP_UDP:
-		return udp_send(bc->us, dst, mb);
+		return re_udp_send(bc->us, dst, mb);
 
 	default:
 		return ENOSYS;

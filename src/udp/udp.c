@@ -400,7 +400,7 @@ int udp_listen(struct udp_sock **usp, const struct sa *local,
  *
  * @return 0 if success, otherwise errorcode
  */
-int udp_connect(struct udp_sock *us, const struct sa *peer)
+int re_udp_connect(struct udp_sock *us, const struct sa *peer)
 {
 	int fd;
 
@@ -474,7 +474,7 @@ static int udp_send_internal(struct udp_sock *us, const struct sa *dst,
  *
  * @return 0 if success, otherwise errorcode
  */
-int udp_send(struct udp_sock *us, const struct sa *dst, struct mbuf *mb)
+int re_udp_send(struct udp_sock *us, const struct sa *dst, struct mbuf *mb)
 {
 	if (!us || !dst || !mb)
 		return EINVAL;

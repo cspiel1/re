@@ -279,7 +279,7 @@ int stun_ctrans_request(struct stun_ctrans **ctp, struct stun *stun, int proto,
 		}
 
 		ct->txc = 1;
-		err = udp_send(ct->sock, dst, mb);
+		err = re_udp_send(ct->sock, dst, mb);
 		break;
 
 	case IPPROTO_TCP:
@@ -290,7 +290,7 @@ int stun_ctrans_request(struct stun_ctrans **ctp, struct stun *stun, int proto,
 			break;
 		}
 
-		err = tcp_connect((struct tcp_conn **)&ct->sock, dst,
+		err = re_tcp_connect((struct tcp_conn **)&ct->sock, dst,
 				  tcp_estab_handler, tcp_recv_handler,
 				  tcp_close_handler, ct);
 		break;
