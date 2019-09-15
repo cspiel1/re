@@ -21,3 +21,4 @@ int conf_get_u32(const struct conf *conf, const char *name, uint32_t *num);
 int conf_get_bool(const struct conf *conf, const char *name, bool *val);
 int conf_apply(const struct conf *conf, const char *name,
 	       conf_h *ch, void *arg);
+int conf_set(struct conf *conf, const char *name, const char *value);

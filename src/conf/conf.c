@@ -203,6 +203,23 @@ int conf_get(const struct conf *conf, const char *name, struct pl *pl)
 }
 
 
+int conf_set(struct conf *conf, const char *name, const char *value)
+{
+	if (!conf || !name)
+		return EINVAL;
+
+	mbuf_write_str(conf->mb, name);
+
+	if (value) {
+		mbuf_write_u8(conf->mb, ' ');
+		mbuf_write_str(conf->mb, value);
+	}
+
+	mbuf_write_u8(conf->mb, '\n');
+	return 0;
+}
+
+
 /**
  * Get the value of a configuration item string
  *
