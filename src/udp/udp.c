@@ -258,7 +258,7 @@ int udp_listen(struct udp_sock **usp, const struct sa *local,
 {
 	struct addrinfo hints, *res = NULL, *r;
 	struct udp_sock *us = NULL;
-	char addr[64];
+	char addr[64] = "";
 	char serv[6] = "0";
 	int af, error, err = 0;
 
