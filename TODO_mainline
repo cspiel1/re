@@ -1,0 +1,59 @@
+### patches for mainline libre #####
+- b20098d03a4193c4f2580c8dbd3c50cf2633dc46 RTLD_GLOBAL (maybe)
+
+openssl
+- 43fd1a49e0635c412ff6742c8568812e2ae11e16 openssl
+- a67572ef8230641adaffef7d95765701a46b4789 openssl (maybe squash)
+- 54427652d7352e9422214c8efa3d51ee2bf28023 set verify methode for openSSL 1.1.0
+
+
+- aaed292447e1899510c4febbdedf736e4348294a siplog
+- df0cf440d2f84d51efecad8d0f7da70d88e03e63 fix DNS lookup (verify again)
+- 895b76a54305b3096178c321a0de55e9408f061e add Expires (see mailing list)
+
+register response 401,407:
+- f402dd7136065efc585048698f341685f20a732e register at asterisk
+- 3ae7eb2dabdc3f30a7bd411c074e9be419190384 register for 3CX
+
+- 2b790c576f67496d45b61ed42345c30f21876b99 expiry time from server (maybe)
+- b4c0de92cb582e20bd34608d5b4d4fb08fe1184b jbuf flush
+
+register cisco mode
+- 7560f1cadfb1ef550ad4ca459570ea3293e5875f register expires=0
+- ef9954c6cb669193d7686d98ca9fdf150ab5cf40 register expires=0 (squash)
+- c46c86f262974ed7ef6f0484a2a2dfb08a4dc04a handle expiry=0
+- d5a6e88a86cfb0779fa5b8c865232bfa383ed3c9 call response handler for unregister
+
+set contact header also in cisco mode
+- db23f1132b863f3403b0ab77ac7e8c648ee3f00d
+
+
+rtpplay (maybe)
+- 150d20702a37cf883cc23a5e1b028f2c586d59e3
+- 9289f39f2aa9ed23ee0963f25ca599f8d1b53b18
+- 011e0ec6f317ccf73f4bdbb4a0004c8f4e24f92f
+- 71c7c5759e58ad0a1904820c6fde67cff795ffe1
+
+IPv4 and IPv6:
+- e45882a9671e1d41e72ee1cfb4f8a41b9d280a7b net_if_getaddr_for
+- 2b042b910d4f110630cd1d2a1ffbf8cd0f75fe5b IPv6 link local addresses
+
+- 98acdd8858d6971961dc251598aed0d740b9e129 fix sip_addr_decode
+
+- 6de54873d34b1a4c87d65ed3699cfb108221cde1 via decode
+- 6aca79639b6e26d397860c74e4cc64049fffbcec use via rreceived and rport for Contact header
+
+- 7efbdbeb848419ad7df1e2ab3bde1e2cd925df94 (avoid random udp ports) maybe not --> RFC,google
+
+Contact header for NAT
+- 8fa26b3821afe0066b7c482aeead1f10b252d8e8 use To for Contact (RFC, Roli)
+- 3969891dfd5b2bb57de0deba44630f582a4675b7 get_via_received
+- 1373c3170da7765e0966993bbace7db33815304f ACK, Contact header for NAT
+- 4974464b30db275db175cfc89df5ff37e534e5c6 Contact add transport param
+- be791fe245047de371474f29d5322589184c1d54 reg: use Via for laddr
+- 24d991384ed20633872f6f5cd7fa6b0319a1b0dd squash above
+	Only for REGISTER (maybe also for INVITE, or other)
+
+
+
+
