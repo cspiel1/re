@@ -151,13 +151,6 @@ static void destructor(void *data)
 	case IPPROTO_UDP:
 		udp_handler_set(rs->sock_rtp, NULL, NULL);
 		udp_handler_set(rs->sock_rtcp, NULL, NULL);
-
-		mem_deref(rs->sock_rtp);
-		mem_deref(rs->sock_rtcp);
-		break;
-
-	case IPPROTO_TCP:
-		mem_deref(rs->sock_rtp);
 		break;
 
 	default:
@@ -167,6 +160,9 @@ static void destructor(void *data)
 	/* Destroy RTCP Session now */
 	mem_deref(rs->rtcp);
 
+	mem_deref(rs->sock_rtp);
+	if (IPPROTO_UDP == rs->proto)
+		mem_deref(rs->sock_rtcp);
 }
 
 
