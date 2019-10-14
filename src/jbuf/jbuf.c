@@ -37,8 +37,8 @@
 #define JBUF_JITTER_PERIOD 64
 #define JBUF_JITTER_UP_SPEED 16
 #define JBUF_BUFTIME_PERIOD 16
-#define JBUF_LO_BOUND 125
-#define JBUF_HI_BOUND 220
+#define JBUF_LO_BOUND 125              /* 125% of jitter */
+#define JBUF_HI_BOUND 220              /* 220% of jitter */
 
 /** Defines a packet frame */
 struct frame {
@@ -84,7 +84,8 @@ struct jbuf {
 	uint32_t n;          /**< [# frames] Current # of frames in buffer  */
 	uint32_t min;        /**< [# frames] Minimum # of frames to buffer  */
 	uint32_t max;        /**< [# frames] Maximum # of frames to buffer  */
-	uint32_t ptime;      /**< packet delta in 1/JBUF_JITTER_PERIOD ms */
+	uint32_t wish;       /**< [# frames] Startup wish size for buffer   */
+	uint32_t ptime;      /**< packet delta in 1/JBUF_JITTER_PERIOD ms   */
 	uint16_t seq_put;    /**< Sequence number for last jbuf_put()       */
 	bool started;        /**< Jitter buffer is in start phase           */
 	bool running;        /**< Jitter buffer is running                  */
@@ -167,11 +168,13 @@ static void jbuf_destructor(void *data)
  * @param jbp    Pointer to returned jitter buffer
  * @param min    Minimum delay in [frames]
  * @param max    Maximum delay in [frames]
+ * @param wish   Wish delay in [frames]. Used at start.
  * @param ptime  Packet time
  *
  * @return 0 if success, otherwise errorcode
  */
-int jbuf_alloc(struct jbuf **jbp, uint32_t min, uint32_t max, uint32_t ptime)
+int jbuf_alloc(struct jbuf **jbp, uint32_t min, uint32_t max, uint32_t wish,
+		uint32_t ptime)
 {
 	struct jbuf *jb;
 	uint32_t i;
@@ -197,7 +200,19 @@ int jbuf_alloc(struct jbuf **jbp, uint32_t min, uint32_t max, uint32_t ptime)
 
 	jb->min   = min;
 	jb->max   = max;
+	jb->wish  = MAX(min, MIN(max, wish));
 	jb->ptime = ptime;
+
+	/* We start with wish size. */
+	jb->jitst.buftime = jb->wish * ptime * JBUF_JITTER_PERIOD;
+
+	/* Compute a good start value for jitter fitting to wish size.
+	 * Note: JBUF_LO_BOUND and JBUF_HI_BOUND are in percent.
+	 *
+	 * jitter = buftime * 100% / ( (JBUF_LO_BOUND + JBUF_HI_BOUND) / 2 )
+	 *                                                                       */
+	jb->jitst.jitter = jb->jitst.buftime * 100 *
+		2 / (JBUF_LO_BOUND + JBUF_HI_BOUND);
 	err = lock_alloc(&jb->lock);
 	if (err)
 		goto out;
@@ -469,7 +484,7 @@ int jbuf_get(struct jbuf *jb, struct rtp_header *hdr, void **mem)
 	jb->stat.n_get++;
 
 	if (!jb->started) {
-		if (jb->n < jb->min) {
+		if (jb->n < jb->wish) {
 			DEBUG_INFO("not enough buffer frames - wait.. (n=%u min=%u)\n",
 					jb->n, jb->min);
 			err = ENOENT;

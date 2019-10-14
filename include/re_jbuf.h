@@ -20,7 +20,8 @@ struct jbuf_stat {
 };
 
 
-int  jbuf_alloc(struct jbuf **jbp, uint32_t min, uint32_t max, uint32_t ptime);
+int  jbuf_alloc(struct jbuf **jbp, uint32_t min, uint32_t max, uint32_t wish,
+		uint32_t ptime);
 int  jbuf_put(struct jbuf *jb, const struct rtp_header *hdr, void *mem);
 int  jbuf_get(struct jbuf *jb, struct rtp_header *hdr, void **mem);
 void jbuf_silence(struct jbuf *jb, bool on);
