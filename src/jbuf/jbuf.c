@@ -501,7 +501,7 @@ int jbuf_get(struct jbuf *jb, struct rtp_header *hdr, void **mem)
 		err = ENOENT;
 		if (jb->min < jb->max && jb->stat.n_get > 100 &&
 				jb->stat.n_get/jb->stat.n_underflow < 100) {
-			DEBUG_WARNING("inc min jitter buffer size (%u/%u underflows)",
+			DEBUG_INFO("inc min jitter buffer size (%u/%u underflows)\n",
 					jb->stat.n_underflow, jb->stat.n_get);
 		}
 		goto out;
