@@ -17,7 +17,7 @@
 #include <stdlib.h>
 
 #define DEBUG_MODULE "jbuf"
-#define DEBUG_LEVEL 6
+#define DEBUG_LEVEL 5
 #include <re_dbg.h>
 
 
@@ -255,8 +255,10 @@ static void jbuf_jitter_calc(struct jbuf *jb, uint32_t ts)
 	int32_t da;
 	int32_t s;
 	int32_t djit;
+#if DEBUG_LEVEL >= 6
 	static uint64_t tr0 = 0;
 	static uint32_t ts0 = 0;
+#endif
 
 	if (!st->ts0) {
 		st->ts0 = st->ts1 = ts;
@@ -268,10 +270,12 @@ static void jbuf_jitter_calc(struct jbuf *jb, uint32_t ts)
 		st->tr1 = tr;
 	}
 
+#if DEBUG_LEVEL >= 6
 	if (!tr0) {
 		tr0 = tr;
 		ts0 = ts;
 	}
+#endif
 
 	/* TODO: Why we need to divide ts by 8? */
 	d = (int32_t) ( ((int64_t) st->tr1 - (int64_t) st->tr0) -
@@ -322,7 +326,7 @@ static void jbuf_jitter_calc(struct jbuf *jb, uint32_t ts)
 		st->buftime = buftime - jb->ptime * JBUF_JITTER_PERIOD;
 	}
 
-	if (DEBUG_LEVEL >= 6) {
+#if DEBUG_LEVEL >= 6
 		uint32_t treal = (uint32_t) (st->tr1 - tr0);
 		int32_t tdiff = ((int32_t) (st->ts1 - ts0) / 8) - treal;
 		DEBUG_INFO("%s, %u, %i, %u, %u, %u, %i, %i, %u\n",
@@ -331,7 +335,7 @@ static void jbuf_jitter_calc(struct jbuf *jb, uint32_t ts)
 				buftime / JBUF_JITTER_PERIOD, st->buftime / JBUF_JITTER_PERIOD,
 				bufmin / JBUF_JITTER_PERIOD, bufmax / JBUF_JITTER_PERIOD,
 				st->st);
-	}
+#endif
 }
 
 
