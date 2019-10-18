@@ -487,6 +487,10 @@ static int conn_connect(struct http_req *req)
 
 		if (err)
 			goto out;
+
+		err = tls_set_servername(conn->sc, req->host);
+		if (err)
+			goto out;
 	}
 #endif
 
