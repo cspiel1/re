@@ -63,12 +63,13 @@ struct jitter_stat {
 	uint32_t ts1;        /**< current timestamp               */
 	uint64_t tr0;        /**< pre. time of arrival            */
 	uint64_t tr1;        /**< cur. time of arrival            */
+#if DEBUG_LEVEL >= 6
+	uint64_t tr00;       /**< arrival of first packet         */
+#endif
 
 	enum jb_state st;    /**< computed jitter buffer state    */
 
 	int32_t buftime;    /**< buffered time                   */
-	uint32_t hi_cnt;     /**< number of JS_HIGH in a row     */
-	uint32_t lo_cnt;     /**< number of JS_LOW in a row      */
 };
 
 
@@ -162,6 +163,23 @@ static void jbuf_destructor(void *data)
 }
 
 
+static void jbuf_init_jitst(struct jbuf *jb)
+{
+	memset(&jb->jitst, 0, sizeof(jb->jitst));
+
+	/* We start with wish size. */
+	jb->jitst.buftime = jb->wish * jb->ptime * JBUF_JITTER_PERIOD;
+
+	/* Compute a good start value for jitter fitting to wish size.
+	 * Note: JBUF_LO_BOUND and JBUF_HI_BOUND are in percent.
+	 *
+	 * jitter = buftime * 100% / ( (JBUF_LO_BOUND + JBUF_HI_BOUND) / 2 )
+	 *                                                                       */
+	jb->jitst.jitter = jb->jitst.buftime * 100 *
+		2 / (JBUF_LO_BOUND + JBUF_HI_BOUND);
+}
+
+
 /**
  * Allocate a new jitter buffer
  *
@@ -203,16 +221,7 @@ int jbuf_alloc(struct jbuf **jbp, uint32_t min, uint32_t max, uint32_t wish,
 	jb->wish  = MAX(min, MIN(max, wish));
 	jb->ptime = ptime;
 
-	/* We start with wish size. */
-	jb->jitst.buftime = jb->wish * ptime * JBUF_JITTER_PERIOD;
-
-	/* Compute a good start value for jitter fitting to wish size.
-	 * Note: JBUF_LO_BOUND and JBUF_HI_BOUND are in percent.
-	 *
-	 * jitter = buftime * 100% / ( (JBUF_LO_BOUND + JBUF_HI_BOUND) / 2 )
-	 *                                                                       */
-	jb->jitst.jitter = jb->jitst.buftime * 100 *
-		2 / (JBUF_LO_BOUND + JBUF_HI_BOUND);
+	jbuf_init_jitst(jb);
 	err = lock_alloc(&jb->lock);
 	if (err)
 		goto out;
@@ -255,10 +264,6 @@ static void jbuf_jitter_calc(struct jbuf *jb, uint32_t ts)
 	int32_t da;
 	int32_t s;
 	int32_t djit;
-#if DEBUG_LEVEL >= 6
-	static uint64_t tr0 = 0;
-	static uint32_t ts0 = 0;
-#endif
 
 	if (!st->ts0) {
 		st->ts0 = st->ts1 = ts;
@@ -269,13 +274,6 @@ static void jbuf_jitter_calc(struct jbuf *jb, uint32_t ts)
 		st->tr0 = st->tr1;
 		st->tr1 = tr;
 	}
-
-#if DEBUG_LEVEL >= 6
-	if (!tr0) {
-		tr0 = tr;
-		ts0 = ts;
-	}
-#endif
 
 	/* TODO: Why we need to divide ts by 8? */
 	d = (int32_t) ( ((int64_t) st->tr1 - (int64_t) st->tr0) -
@@ -305,12 +303,6 @@ static void jbuf_jitter_calc(struct jbuf *jb, uint32_t ts)
 	else
 		st->buftime = buftime;
 
-/*    DEBUG_INFO("%s jitter=%ums buftime=%ums -> %ums hi_cnt=%i lo_cnt=%i\n",*/
-/*            __func__,*/
-/*        st->jitter / JBUF_JITTER_PERIOD,*/
-/*        buftime / JBUF_JITTER_PERIOD, st->buftime / JBUF_JITTER_PERIOD,*/
-/*        st->hi_cnt, st->lo_cnt);*/
-
 	st->st = JS_GOOD;
 	bufmin = MAX(st->jitter * JBUF_LO_BOUND / 100,
 			(int32_t) jb->ptime * JBUF_JITTER_PERIOD * 100 / JBUF_LO_BOUND);
@@ -327,14 +319,16 @@ static void jbuf_jitter_calc(struct jbuf *jb, uint32_t ts)
 	}
 
 #if DEBUG_LEVEL >= 6
-		uint32_t treal = (uint32_t) (st->tr1 - tr0);
-		int32_t tdiff = ((int32_t) (st->ts1 - ts0) / 8) - treal;
-		DEBUG_INFO("%s, %u, %i, %u, %u, %u, %i, %i, %u\n",
-				__func__, treal, tdiff,
-				st->jitter / JBUF_JITTER_PERIOD,
-				buftime / JBUF_JITTER_PERIOD, st->buftime / JBUF_JITTER_PERIOD,
-				bufmin / JBUF_JITTER_PERIOD, bufmax / JBUF_JITTER_PERIOD,
-				st->st);
+	if (!st->tr00)
+		st->tr00 = st->tr1;
+
+	uint32_t treal = (uint32_t) (st->tr1 - st->tr00);
+	DEBUG_INFO("%s, %u, %i, %u, %u, %u, %i, %i, %u\n",
+			__func__, treal, d,
+			st->jitter / JBUF_JITTER_PERIOD,
+			buftime / JBUF_JITTER_PERIOD, st->buftime / JBUF_JITTER_PERIOD,
+			bufmin / JBUF_JITTER_PERIOD, bufmax / JBUF_JITTER_PERIOD,
+			st->st);
 #endif
 }
 
@@ -586,7 +580,8 @@ void jbuf_flush(struct jbuf *jb)
 	memset(&jb->stat, 0, sizeof(jb->stat));
 	jb->stat.n_flush = n_flush;
 #endif
-
+	jbuf_init_jitst(jb);
+	jb->started = false;
 	lock_rel(jb->lock);
 }
 
