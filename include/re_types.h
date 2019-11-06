@@ -48,7 +48,8 @@ typedef unsigned long long int    uint64_t;
 
 #endif /* __int8_t_defined */
 #ifndef __ssize_t_defined
-typedef long     ssize_t;
+// TODO: the MACRO trick does not work in esp-idf
+//typedef long     ssize_t;
 #define __ssize_t_defined
 #endif
 
