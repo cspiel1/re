@@ -170,13 +170,17 @@ int net_if_list(net_ifaddr_h *ifh, void *arg)
 /**
  * Get local IP address for a given destination
  *
- * @param dest Destination host. A domain, IPv4 or IPv6 address.
+ * @param dest    Destination host. A domain, IPv4 or IPv6 address.
  * @param localip Returned IP address of the local interface from which the
  *			destination host is reachable.
+ * @param af      Address family filter.
+ * @param isip    The caller knows already if it is an IP address. So set true
+ *                if dest is an IP address.
  *
  * @return 0 if success, otherwise errorcode
  */
-int net_if_getaddr_for(const struct pl *dest, struct sa *localip, bool isip)
+int net_if_getaddr_for(const struct pl *dest, struct sa *localip, int af,
+		bool isip)
 {
 	struct addrinfo hints;
 	struct addrinfo *res = NULL;
@@ -199,19 +203,19 @@ int net_if_getaddr_for(const struct pl *dest, struct sa *localip, bool isip)
 
 		memset(&hints, 0, sizeof(hints));
 		/* set-up hints structure */
-		hints.ai_family   = PF_UNSPEC;
+		hints.ai_family   = af;
 		hints.ai_flags    = AI_PASSIVE;
 		hints.ai_socktype = SOCK_DGRAM;
 		err = getaddrinfo(buf, "0", &hints, &res);
 		if (err) {
-			DEBUG_WARNING("%s: getaddrinfo error for %r: %s\n", __func__, dest,
-					gai_strerror(err));
-			return EADDRNOTAVAIL;
+		    DEBUG_WARNING("%s: getaddrinfo error for %r: %s\n",
+			    __func__, dest, gai_strerror(err));
+		    return EADDRNOTAVAIL;
 		}
 		if (res == NULL) {
-			DEBUG_WARNING("%s: getaddrinfo returned nothing for dest %r\n",
-					__func__, dest);
-			return EINVAL;
+		    DEBUG_WARNING("%s: getaddrinfo returned nothing for"
+			    " dest %r\n", __func__, dest);
+		    return EINVAL;
 		}
 		tar = res->ai_addr;
 		tarlen = res->ai_addrlen;
@@ -219,8 +223,8 @@ int net_if_getaddr_for(const struct pl *dest, struct sa *localip, bool isip)
 		// Port is not relevant since we use a UDP socket.
 		err = sa_set(&sa_tar, dest, 5060);
 		if (err) {
-			DEBUG_WARNING("%s: Unsupported IP address %r. %m\n", __func__, dest,
-					err);
+			DEBUG_WARNING("%s: Unsupported IP address %r."
+				" %m\n", __func__, dest, err);
 			return err;
 		}
 		tar = &sa_tar.u.sa;
@@ -230,7 +234,8 @@ int net_if_getaddr_for(const struct pl *dest, struct sa *localip, bool isip)
 	sock = socket(tar->sa_family, SOCK_DGRAM, 0);
 	if (sock == -1) {
 		err = errno;
-		DEBUG_WARNING("%s: Could not create socket: %m\n", __func__, err);
+		DEBUG_WARNING("%s: Could not create socket: %m\n","
+			" __func__, err);
 		goto out;
 	}
 
@@ -242,15 +247,16 @@ int net_if_getaddr_for(const struct pl *dest, struct sa *localip, bool isip)
 	if (err == -1) {
 		err = errno;
 		/* The network isn't reachable. */
-		DEBUG_WARNING("%s: Could not connect to %r: %m\n", __func__, dest, err);
+		DEBUG_WARNING("%s: Could not connect to %r: %m\n",
+			__func__, dest, err);
 		goto out;
 	}
 
 	s = sizeof(addr);
 	err = getsockname(sock, (struct sockaddr *)&addr, &s);
 	if (err) {
-		DEBUG_WARNING("%s: Error in getsockname for dest=%r: %m", __func__,
-				dest, err);
+		DEBUG_WARNING("%s: Error in getsockname for dest=%r: %m",
+			__func__, dest, err);
 		goto out;
 	}
 
