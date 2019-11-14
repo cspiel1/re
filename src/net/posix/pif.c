@@ -234,8 +234,8 @@ int net_if_getaddr_for(const struct pl *dest, struct sa *localip, int af,
 	sock = socket(tar->sa_family, SOCK_DGRAM, 0);
 	if (sock == -1) {
 		err = errno;
-		DEBUG_WARNING("%s: Could not create socket: %m\n","
-			" __func__, err);
+		DEBUG_WARNING("%s: Could not create socket: %m\n", __func__,
+			err);
 		goto out;
 	}
 
