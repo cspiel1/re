@@ -114,6 +114,13 @@ int sdp_media_add(struct sdp_media **mp, struct sdp_session *sess,
 }
 
 
+int  sdp_media_unlink(struct sdp_media *m)
+{
+	list_unlink(&m->le);
+	return 0;
+}
+
+
 /**
  * Add a remote SDP media line to an SDP Session
  *

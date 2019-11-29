@@ -87,6 +87,7 @@ struct sdp_media;
 
 int  sdp_media_add(struct sdp_media **mp, struct sdp_session *sess,
 		   const char *name, uint16_t port, const char *proto);
+int  sdp_media_unlink(struct sdp_media *m);
 int  sdp_media_set_alt_protos(struct sdp_media *m, unsigned protoc, ...);
 void sdp_media_set_encode_handler(struct sdp_media *m, sdp_media_enc_h *ench,
 				  void *arg);
