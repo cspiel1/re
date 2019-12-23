@@ -5,7 +5,9 @@ test.d
 test.o
 *stamp
 *.previous
+*.swp
 libre.a
 libre.dylib
 libre.pc
 libre.so
+tags

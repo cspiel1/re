@@ -803,6 +803,20 @@ int http_client_add_ca(struct http_cli *cli, const char *tls_ca)
 
 	return tls_add_ca(cli->tls, tls_ca);
 }
+
+
+/**
+ * Add trusted CA certificates given as string.
+ * @param cli    HTTP client
+ * @param capem  The trusted CA as null-terminated string given in PEM format.
+ *
+ * @return 0 for success, error code otherwise.
+ */
+/* ------------------------------------------------------------------------- */
+int http_client_add_capem(struct http_cli *cli, const char *capem)
+{
+	return tls_add_capem(cli->tls, capem);
+}
 #endif
 
 

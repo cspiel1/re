@@ -234,6 +234,46 @@ int tls_add_ca(struct tls *tls, const char *capath)
 }
 
 
+int tls_add_capem(struct tls *tls, const char *capem)
+{
+	X509_STORE *store;
+	X509 *x509;
+	BIO *bio;
+	int ok;
+	int err = 0;
+
+	if (!tls || !capem || !tls->ctx)
+		return EINVAL;
+
+	store = SSL_CTX_get_cert_store(tls->ctx);
+	if (!store)
+		return EINVAL;
+
+	bio  = BIO_new_mem_buf((char *)capem, strlen(capem));
+	if (!bio)
+		return EINVAL;
+
+	x509 = PEM_read_bio_X509(bio, NULL, 0, NULL);
+	if (!x509) {
+		err = EINVAL;
+		DEBUG_WARNING("Could read certificate capem\n");
+		goto out;
+	}
+
+	ok = X509_STORE_add_cert(store, x509);
+	if (!ok) {
+		err = EINVAL;
+		X509_free(x509);
+		DEBUG_WARNING("Could not add certificate capem\n");
+	}
+
+out:
+	BIO_free(bio);
+
+	return err;
+}
+
+
 int tls_set_verify_purpose(struct tls *tls, const char *purpose)
 {
 	int err;
