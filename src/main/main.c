@@ -99,6 +99,13 @@ struct re {
 	bool polling;                /**< Is polling flag                   */
 	int sig;                     /**< Last caught signal                */
 	struct list tmrl;            /**< List of timers                    */
+	bool extpoll;                /**< External polling flag             */
+
+#ifdef HAVE_SELECT
+	fd_set *rfds;                /**< The read file descriptors         */
+	fd_set *wfds;                /**< The write file descriptors        */
+	fd_set *efds;                /**< The exception file descriptors    */
+#endif
 
 #ifdef HAVE_POLL
 	struct pollfd *fds;          /**< Event set for poll()              */
@@ -129,6 +136,12 @@ static struct re global_re = {
 	false,
 	0,
 	LIST_INIT,
+	false,
+#ifdef HAVE_SELECT
+	NULL,
+	NULL,
+	NULL,
+#endif
 #ifdef HAVE_POLL
 	NULL,
 #endif
@@ -149,6 +162,9 @@ static struct re global_re = {
 	&global_re.mutex,
 #endif
 };
+
+
+int poll_process(struct re *re, int n);
 
 
 #ifdef HAVE_PTHREAD
@@ -430,6 +446,21 @@ static int poll_init(struct re *re)
 
 	switch (re->method) {
 
+#ifdef HAVE_SELECT
+	case METHOD_SELECT:
+		if (!re->rfds) {
+			re->rfds = mem_zalloc(sizeof(*re->rfds), NULL);
+			re->wfds = mem_zalloc(sizeof(*re->wfds), NULL);
+			re->efds = mem_zalloc(sizeof(*re->efds), NULL);
+			if (!re->rfds || !re->wfds || !re->efds) {
+				re->rfds = mem_deref(re->rfds);
+				re->wfds = mem_deref(re->wfds);
+				re->efds = mem_deref(re->efds);
+				return ENOMEM;
+			}
+		}
+		break;
+#endif
 #ifdef HAVE_POLL
 	case METHOD_POLL:
 		if (!re->fds) {
@@ -499,28 +530,35 @@ static void poll_close(struct re *re)
 	re->fhs = mem_deref(re->fhs);
 	re->maxfds = 0;
 
+	if (!re->extpoll) {
+#ifdef HAVE_SELECT
+		re->rfds = mem_deref(re->rfds);
+		re->wfds = mem_deref(re->wfds);
+		re->efds = mem_deref(re->efds);
+#endif
 #ifdef HAVE_POLL
-	re->fds = mem_deref(re->fds);
+		re->fds = mem_deref(re->fds);
 #endif
 #ifdef HAVE_EPOLL
-	DEBUG_INFO("poll_close: epfd=%d\n", re->epfd);
+		DEBUG_INFO("poll_close: epfd=%d\n", re->epfd);
 
-	if (re->epfd >= 0) {
-		(void)close(re->epfd);
-		re->epfd = -1;
-	}
+		if (re->epfd >= 0) {
+			(void)close(re->epfd);
+			re->epfd = -1;
+		}
 
-	re->events = mem_deref(re->events);
+		re->events = mem_deref(re->events);
 #endif
 
 #ifdef HAVE_KQUEUE
-	if (re->kqfd >= 0) {
-		close(re->kqfd);
-		re->kqfd = -1;
-	}
+		if (re->kqfd >= 0) {
+			close(re->kqfd);
+			re->kqfd = -1;
+		}
 
-	re->evlist = mem_deref(re->evlist);
+		re->evlist = mem_deref(re->evlist);
 #endif
+	}
 }
 
 
@@ -657,9 +695,6 @@ static int fd_poll(struct re *re)
 {
 	const uint64_t to = tmr_next_timeout(&re->tmrl);
 	int i, n;
-#ifdef HAVE_SELECT
-	fd_set rfds, wfds, efds;
-#endif
 
 	DEBUG_INFO("next timer: %llu ms\n", to);
 
@@ -678,20 +713,20 @@ static int fd_poll(struct re *re)
 		struct timeval tv;
 
 		/* Clear and update fd sets */
-		FD_ZERO(&rfds);
-		FD_ZERO(&wfds);
-		FD_ZERO(&efds);
+		FD_ZERO(re->rfds);
+		FD_ZERO(re->wfds);
+		FD_ZERO(re->efds);
 
 		for (i=0; i<re->nfds; i++) {
 			if (!re->fhs[i].fh)
 				continue;
 
 			if (re->fhs[i].flags & FD_READ)
-				FD_SET(i, &rfds);
+				FD_SET(i, re->rfds);
 			if (re->fhs[i].flags & FD_WRITE)
-				FD_SET(i, &wfds);
+				FD_SET(i, re->wfds);
 			if (re->fhs[i].flags & FD_EXCEPT)
-				FD_SET(i, &efds);
+				FD_SET(i, re->efds);
 		}
 
 #ifdef WIN32
@@ -701,7 +736,7 @@ static int fd_poll(struct re *re)
 #endif
 		tv.tv_usec = (uint32_t) (to % 1000) * 1000;
 		re_unlock(re);
-		n = select(re->nfds, &rfds, &wfds, &efds, to ? &tv : NULL);
+		n = select(re->nfds, re->rfds, re->wfds, re->efds, to ? &tv : NULL);
 		re_lock(re);
 	}
 		break;
@@ -736,12 +771,24 @@ static int fd_poll(struct re *re)
 		return EINVAL;
 	}
 
+	return poll_process(re, n);
+}
+
+
+int poll_process(struct re *re, int n)
+{
+	int i;
+	int fd, flags;
+#ifdef HAVE_KQUEUE
+	struct kevent *kev;
+#endif
+
 	if (n < 0)
 		return errno;
 
 	/* Check for events */
 	for (i=0; (n > 0) && (i < re->nfds); i++) {
-		int fd, flags = 0;
+		flags = 0;
 
 		switch (re->method) {
 
@@ -750,17 +797,20 @@ static int fd_poll(struct re *re)
 			fd = i;
 			if (re->fds[fd].revents & POLLIN)
 				flags |= FD_READ;
+
 			if (re->fds[fd].revents & POLLOUT)
 				flags |= FD_WRITE;
+
 			if (re->fds[fd].revents & (POLLERR|POLLHUP|POLLNVAL))
 				flags |= FD_EXCEPT;
+
 			if (re->fds[fd].revents & POLLNVAL) {
-				DEBUG_WARNING("event: fd=%d POLLNVAL"
-					      " (fds.fd=%d,"
+				DEBUG_WARNING("event: fd=%d POLLNVAL (fds.fd=%d,"
 					      " fds.events=0x%02x)\n",
 					      fd, re->fds[fd].fd,
 					      re->fds[fd].events);
 			}
+
 			/* Clear events */
 			re->fds[fd].revents = 0;
 			break;
@@ -768,11 +818,11 @@ static int fd_poll(struct re *re)
 #ifdef HAVE_SELECT
 		case METHOD_SELECT:
 			fd = i;
-			if (FD_ISSET(fd, &rfds))
+			if (FD_ISSET(fd, re->rfds))
 				flags |= FD_READ;
-			if (FD_ISSET(fd, &wfds))
+			if (FD_ISSET(fd, re->wfds))
 				flags |= FD_WRITE;
-			if (FD_ISSET(fd, &efds))
+			if (FD_ISSET(fd, re->efds))
 				flags |= FD_EXCEPT;
 			break;
 #endif
@@ -782,24 +832,24 @@ static int fd_poll(struct re *re)
 
 			if (re->events[i].events & EPOLLIN)
 				flags |= FD_READ;
+
 			if (re->events[i].events & EPOLLOUT)
 				flags |= FD_WRITE;
+
 			if (re->events[i].events & EPOLLERR)
 				flags |= FD_EXCEPT;
 
-			if (!flags) {
+			if (!flags)
 				DEBUG_WARNING("epoll: no flags fd=%d\n", fd);
-			}
 
 			break;
 #endif
 
 #ifdef HAVE_KQUEUE
 		case METHOD_KQUEUE: {
+			kev = &re->evlist[i];
 
-			struct kevent *kev = &re->evlist[i];
-
-			fd = (int)kev->ident;
+			fd = (int) kev->ident;
 
 			if (fd >= re->maxfds) {
 				DEBUG_WARNING("large fd=%d\n", fd);
@@ -810,23 +860,17 @@ static int fd_poll(struct re *re)
 				flags |= FD_READ;
 			else if (kev->filter == EVFILT_WRITE)
 				flags |= FD_WRITE;
-			else {
-				DEBUG_WARNING("kqueue: unhandled "
-					      "filter %x\n",
-					      kev->filter);
-			}
+			else
+				DEBUG_WARNING("kqueue: unhandled filter %x\n", kev->filter);
 
-			if (kev->flags & EV_EOF) {
+			if (kev->flags & EV_EOF)
 				flags |= FD_EXCEPT;
-			}
-			if (kev->flags & EV_ERROR) {
-				DEBUG_WARNING("kqueue: EV_ERROR on fd %d\n",
-					      fd);
-			}
 
-			if (!flags) {
+			if (kev->flags & EV_ERROR)
+				DEBUG_WARNING("kqueue: EV_ERROR on fd %d\n", fd);
+
+			if (!flags)
 				DEBUG_WARNING("kqueue: no flags fd=%d\n", fd);
-			}
 		}
 			break;
 #endif
@@ -857,6 +901,183 @@ static int fd_poll(struct re *re)
 
 	return 0;
 }
+
+
+/**
+ * Processes file descriptor changes. Should be called in the applications
+ * thread. Use this function only if the application has it's own file
+ * descriptor poll loop and you don't want to run a thread that calls blocking
+ * re_main!
+ *
+ * @param n Number of file descriptors ready for IO. The return value of
+ *            epoll_wait, poll, select. (Currently only epoll is supported.)
+ *
+ * @return 0 if success, otherwise errorcode
+ */
+int re_process(int n)
+{
+	int err;
+	struct re *re = re_get();
+	if (METHOD_NULL == re->method)
+		poll_setup(re);
+
+	err = poll_process(re, n);
+	tmr_poll(&re->tmrl);
+
+	return err;
+}
+
+
+uint64_t re_next_timeout(void)
+{
+	struct re *re = re_get();
+
+	return tmr_next_timeout(&re->tmrl);
+}
+
+
+static int prepare_poll(struct re *re)
+{
+	int err;
+	err = fd_setsize(re->maxfds);
+	if (err)
+		goto out;
+
+	re->extpoll = true;
+	err = poll_method_set(re->method);
+	if (err)
+		goto out;
+
+	err = poll_init(re);
+
+ out:
+	if (err)
+		poll_close(re);
+
+	return err;
+}
+
+
+#ifdef HAVE_SELECT
+/**
+ * If libre should run in the applications thread this function can be used
+ * before calling libre_init (and baresip_init) or any call to fd_listen. In
+ * this case the application will have a file descriptor select loop.
+ * This function tells libre the fd_set structures used in the applications
+ * select loop. See man page of select!
+ * @param maxfds Maximum number of file descriptors possible.
+ * @param rfds   The array of file descriptors that are ready for reading.
+ * @param wfds   The array of file descriptors that are ready for writing.
+ * @param efds   The array of file descriptors with execeptions.
+ *
+ * @return 0 if success, otherwise errorcode
+ */
+int   libre_prepare_select(int maxfds, fd_set *rfds, fd_set *wfds,
+		fd_set *efds)
+{
+	struct re *re = re_get();
+
+	if (!rfds || !wfds || !efds)
+		return EINVAL;
+
+	re->maxfds = maxfds;
+
+	re->rfds = rfds;
+	re->wfds = wfds;
+	re->efds = efds;
+
+	re->method = METHOD_SELECT;
+	prepare_poll(re);
+	return 0;
+}
+#endif
+
+
+#ifdef HAVE_POLL
+/**
+ * Similar to libre_prepare_select. Instead of select the application uses poll
+ * method in the file descriptor polling loop. This function tells libre the
+ * pollfd structure used by the application.
+ *
+ * @param maxfds Maximum number of file descriptors possible.
+ * @param fds    The array pollfd structures. See man page of poll!
+ *
+ * @return 0 if success, otherwise errorcode
+ */
+int   libre_prepare_poll(int maxfds, struct pollfd *fds)
+{
+	struct re *re = re_get();
+
+	if (!fds)
+		return EINVAL;
+
+	re->maxfds = maxfds;
+	re->fds = fds;
+
+	re->method = METHOD_POLL;
+	prepare_poll(re);
+
+	return 0;
+}
+#endif
+
+
+#ifdef HAVE_EPOLL
+/**
+ * Simliar to libre_prepare_poll. The application uses epoll method. See man
+ * page of epoll, epoll_wait and epoll_create!
+ * @param maxfds Maximum number of file descriptors possible.
+ * @param events The epoll_event array.
+ * @param epfd   The epoll file descriptor created with epoll_create.
+ *
+ * @return 0 if success, otherwise errorcode
+ */
+int   libre_prepare_epoll(int maxfds, struct epoll_event *events, int epfd)
+{
+	struct re *re = re_get();
+
+	if (!events || epfd == -1)
+		return EINVAL;
+
+	re->maxfds = maxfds;
+	re->events = events;
+	re->epfd = epfd;
+
+	re->method = METHOD_EPOLL;
+	prepare_poll(re);
+
+	return 0;
+}
+#endif
+
+
+#ifdef HAVE_KQUEUE
+/**
+ * Simliar to libre_prepare_poll. The application uses kqueue method.
+ *
+ * @param maxfds Maximum number of file descriptors possible.
+ * @param evlist
+ * @param kqfd
+ *
+ * @return 0 if success, otherwise errorcode
+ */
+int   libre_prepare_kqueue(int maxfds, struct kevent *evlist, int kqfd)
+{
+	struct re *re = re_get();
+
+	if (!evlist)
+		return EINVAL;
+
+	re->maxfds = maxfds;
+	re->evlist = evlist;
+	re->kqfd = kqfd;
+
+	re->method = METHOD_KQUEUE;
+	prepare_poll(re);
+
+	return 0;
+}
+#endif
 
 
 /**
