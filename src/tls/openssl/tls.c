@@ -263,11 +263,11 @@ int tls_add_capem(struct tls *tls, const char *capem)
 	ok = X509_STORE_add_cert(store, x509);
 	if (!ok) {
 		err = EINVAL;
-		X509_free(x509);
 		DEBUG_WARNING("Could not add certificate capem\n");
 	}
 
 out:
+	X509_free(x509);
 	BIO_free(bio);
 
 	return err;
