@@ -10,7 +10,7 @@ VER_MINOR := 5
 VER_PATCH := 8
 
 PROJECT   := re
-VERSION   := 0.5.8
+VERSION   := commend_v0.5.8
 
 MK	:= mk/re.mk
 
