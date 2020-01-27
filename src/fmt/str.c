@@ -140,3 +140,42 @@ size_t str_len(const char *s)
 {
 	return s ? strlen(s) : 0;
 }
+
+
+/**
+ * Convert various possible boolean strings to a boolean variable
+ *
+ * @param val variable pointer to store outcomen
+ * @param str convertable string / string -> bool
+ *
+ * @return int 0 if success, otherwise errorcode
+ */
+int str_bool(bool *val, const char *str)
+{
+	int err = 0;
+
+	if(!val || !str)
+		return EINVAL;
+
+	if(strcmp(str, "0") == 0) {
+		*val = false;
+	} else if(strcmp(str, "1") == 0) {
+		*val = true;
+	} else if(strcmp(str, "false") == 0) {
+		*val = false;
+	} else if(strcmp(str, "true") == 0) {
+		*val = true;
+	} else if(strcmp(str, "disable") == 0) {
+		*val = false;
+	} else if(strcmp(str, "enable") == 0) {
+		*val = true;
+	} else if(strcmp(str, "off") == 0) {
+		*val = false;
+	} else if(strcmp(str, "on") == 0) {
+		*val = true;
+	} else {
+		err = 0;
+	}
+
+	return err;
+}
