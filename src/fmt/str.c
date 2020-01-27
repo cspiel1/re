@@ -157,21 +157,21 @@ int str_bool(bool *val, const char *str)
 	if(!val || !str)
 		return EINVAL;
 
-	if(strcmp(str, "0") == 0) {
+	if(!strcmp(str, "0")) {
 		*val = false;
-	} else if(strcmp(str, "1") == 0) {
+	} else if(!strcmp(str, "1")) {
 		*val = true;
-	} else if(strcmp(str, "false") == 0) {
+	} else if(!strcmp(str, "false")) {
 		*val = false;
-	} else if(strcmp(str, "true") == 0) {
+	} else if(!strcmp(str, "true")) {
 		*val = true;
-	} else if(strcmp(str, "disable") == 0) {
+	} else if(!strcmp(str, "disable")) {
 		*val = false;
-	} else if(strcmp(str, "enable") == 0) {
+	} else if(!strcmp(str, "enable")) {
 		*val = true;
-	} else if(strcmp(str, "off") == 0) {
+	} else if(!strcmp(str, "off")) {
 		*val = false;
-	} else if(strcmp(str, "on") == 0) {
+	} else if(!strcmp(str, "on")) {
 		*val = true;
 	} else {
 		err = 0;
