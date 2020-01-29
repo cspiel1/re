@@ -1,0 +1,17 @@
+
+
+How to test jbuf
+================
+1. Add bridge interface linked to your ethernet interface.
+sudo ip link add ifb2 type ifb || :
+sudo ip link set ifb2 up
+sudo tc qdisc add dev enp1s0 handle ffff: ingress
+sudo tc filter add dev enp1s0 parent ffff: u32 match u32 0 0 action mirred egress redirect dev ifb2
+
+2. Activate jitter
+sudo tc qdisc add dev ifb2 root netem delay 100ms 50ms
+
+3. Deactivate jitter
+sudo tc qdisc del dev ifb2 root
+
+4. See/Use jbuf.plot to generate plots!
