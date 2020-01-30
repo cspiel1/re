@@ -18,8 +18,8 @@ set key outside
 #set yrange [0:]
 plot 'jbuf.dat' using 2:3 title 'diff', \
 	'jbuf.dat' using 2:4 title 'jitter', \
-	'jbuf.dat' using 2:5 title 'buf', \
-	'jbuf.dat' using 2:6 title 'avbuf', \
+	'jbuf.dat' using 2:5 title 'buftime', \
+	'jbuf.dat' using 2:6 title 'avbuftime', \
 	'jbuf.dat' using 2:7 title 'bufmin', \
 	'jbuf.dat' using 2:8 title 'bufmax', \
 	'jbuf.dat' using 2:($9*10) title 'G/L/H', \
