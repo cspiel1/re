@@ -101,8 +101,8 @@ struct jbuf {
 	struct jitter_stat jitst;  /**< Jitter statistics.                  */
 
 	struct lock *lock;   /**< Makes jitter buffer thread safe           */
+	uint16_t seq_get;    /**< Sequence number of last played frame      */
 #if JBUF_STAT
-	uint16_t seq_get;      /**< Timestamp of last played frame */
 	struct jbuf_stat stat; /**< Jitter buffer Statistics       */
 #endif
 };
@@ -592,10 +592,10 @@ int jbuf_get(struct jbuf *jb, struct rtp_header *hdr, void **mem)
 				   seq_diff, f->hdr.seq, jb->seq_get);
 		}
 	}
+#endif
 
 	/* Update sequence number for 'get' */
 	jb->seq_get = f->hdr.seq;
-#endif
 
 	*hdr = f->hdr;
 	*mem = mem_ref(f->mem);
@@ -639,9 +639,9 @@ void jbuf_flush(struct jbuf *jb)
 	jb->n       = 0;
 	jb->running = false;
 
+	jb->seq_get = 0;
 #if JBUF_STAT
 	n_flush = STAT_INC(n_flush);
-	jb->seq_get = 0;
 	memset(&jb->stat, 0, sizeof(jb->stat));
 	jb->stat.n_flush = n_flush;
 #endif
