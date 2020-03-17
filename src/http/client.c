@@ -817,10 +817,55 @@ int http_client_add_capem(struct http_cli *cli, const char *capem)
 {
 	return tls_add_capem(cli->tls, capem);
 }
-#endif
 
 
-#ifdef USE_TLS
+/**
+ * Set client certificate
+ * @param cli    HTTP client
+ * @param cert   File path to client certificate.
+ *
+ * @return 0 for success, error code otherwise.
+ */
+/* ------------------------------------------------------------------------- */
+int http_client_set_client_cert(struct http_cli *cli, const char *cert_file_path)
+{
+	FILE *cert_file = NULL;
+	size_t file_size = 0;
+	char *cert_data = NULL;
+	int res = 0;
+
+	cert_file = fopen(cert_file_path, "r");
+	if (!cert_file) {
+		res = EINVAL;
+		DEBUG_WARNING("Could not open file '%s'\n", cert_file_path);
+		goto out;
+	}
+
+	fseek(cert_file, 0L, SEEK_END);
+	file_size = ftell(cert_file);
+	fseek(cert_file, 0L, SEEK_SET);
+
+	cert_data = mem_alloc(file_size + 1, NULL);
+	if (!cert_data) {
+		res = ENOMEM;
+		DEBUG_WARNING("Could not allocate cert file memory\n");
+		goto close_file_out;
+	}
+
+	fread(cert_data, 1, file_size, cert_file);
+	cert_data[file_size] = 0;
+
+	res = tls_set_certificate(cli->tls, cert_data, file_size);
+
+	mem_deref(cert_data);
+
+close_file_out:
+	fclose(cert_file);
+out:
+	return res;
+}
+
+
 /**
  * Set verify host name
  *
