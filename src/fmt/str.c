@@ -174,7 +174,7 @@ int str_bool(bool *val, const char *str)
 	} else if(!strcmp(str, "on")) {
 		*val = true;
 	} else {
-		err = 0;
+		err = EINVAL;
 	}
 
 	return err;
