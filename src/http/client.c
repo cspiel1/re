@@ -886,5 +886,17 @@ int http_client_set_tls_hostname(struct http_cli *cli, const struct pl *hostname
 
 	return pl_strdup(&cli->tls_hostname, hostname);
 }
+
+/**
+ * Get verify host name
+ *
+ * @param cli       HTTP client
+ *
+ * @return          String for alternative name validation.
+ */
+const char *http_client_get_tls_hostname(struct http_cli *cli)
+{
+	return cli->tls_hostname;
+}
 #endif
 
