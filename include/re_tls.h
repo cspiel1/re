@@ -4,7 +4,9 @@
  * Copyright (C) 2010 Creytiv.com
  */
 
+#ifdef USE_OPENSSL
 #include <openssl/ssl.h>
+#endif
 
 struct tls;
 struct tls_conn;
