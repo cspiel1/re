@@ -865,6 +865,28 @@ out:
 	return res;
 }
 
+/**
+ * Set client certificate in pem format
+ * @param cli    HTTP client
+ * @param pem    Client certificate in pem format.
+ * @param len    length of pem
+ *
+ * @return 0 for success, error code otherwise.
+ */
+/* ------------------------------------------------------------------------- */
+int http_client_set_client_cert_pem(struct http_cli *cli,
+	const char *pem, size_t len)
+{
+	if (!cli) {
+		DEBUG_WARNING("error http_cli not initialized\n");
+		return 1;
+	}
+	if (!cli->tls) {
+		DEBUG_WARNING("error http_cli->tls not initialized\n");
+		return 2;
+	}
+	return tls_set_certificate(cli->tls, pem, len);
+}
 
 /**
  * Set verify host name

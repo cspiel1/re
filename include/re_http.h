@@ -145,6 +145,8 @@ int http_client_set_config(struct http_cli *clip, struct http_conf *conf);
 int http_client_add_ca(struct http_cli *cli, const char *tls_ca);
 int http_client_add_capem(struct http_cli *cli, const char *capem);
 int http_client_set_client_cert(struct http_cli *cli, const char *cert_file_path);
+int http_client_set_client_cert_pem(struct http_cli *cli,
+									const char *pem, size_t len);
 int http_client_set_tls_hostname(struct http_cli *cli, const struct pl *hostname);
 const char *http_client_get_tls_hostname(struct http_cli *cli);
 int http_request(struct http_req **reqp, struct http_cli *cli, const char *met,
