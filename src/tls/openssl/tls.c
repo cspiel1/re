@@ -199,9 +199,6 @@ int tls_alloc(struct tls **tlsp, enum tls_method method, const char *keyfile,
 		}
 	}
 
-	if (tls && tls->ctx)
-		SSL_CTX_set_mode(tls->ctx, SSL_MODE_ASYNC);
-
 	err = 0;
  out:
 	if (err)
