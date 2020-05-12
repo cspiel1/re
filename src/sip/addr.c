@@ -48,6 +48,7 @@ int sip_addr_decode(struct sip_addr *addr, const struct pl *pl)
 			     &addr->auri, &params))
 			return EBADMSG;
 		addr->auri = *pl;
+		addr->params = params;
 	}
 
 	err = uri_decode(&addr->uri, &addr->auri);
