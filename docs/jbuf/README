@@ -1,7 +1,5 @@
-
-
-How to test jbuf
-================
+How to test jbuf (ingress packages)
+===================================
 1. Add bridge interface linked to your ethernet interface.
 sudo ip link add ifb2 type ifb || :
 sudo ip link set ifb2 up
@@ -15,3 +13,14 @@ sudo tc qdisc add dev ifb2 root netem delay 100ms 50ms
 sudo tc qdisc del dev ifb2 root
 
 4. See/Use jbuf.plot to generate plots!
+
+
+How to test jbuf (egress packages)
+==================================
+1. Add network emulator to your ethernet interface via traffic control
+sudo tc qdisc add dev <NET-IF> root handle 1:0 netem delay <TIME>ms <JITTER>ms <CORRELATION>%
+
+2. To remove the jitter again
+sudo tc qdisc del dev <NET-IF> root handle 1:0
+
+3. See man tc-netem for more information and different configuration
