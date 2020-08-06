@@ -396,8 +396,8 @@ int httpauth_digest_response_encode(const struct httpauth_digest_resp *resp,
 	err |= mbuf_printf(mb, ", response=\"%r\"", &resp->response);
 
 	if (pl_isset(&resp->qop)) {
-		err |= mbuf_printf(mb, ", qop=\"%r\"", &resp->qop);
-		err |= mbuf_printf(mb, ", nc=\"%r\"", &resp->nc);
+		err |= mbuf_printf(mb, ", qop=%r", &resp->qop);
+		err |= mbuf_printf(mb, ", nc=%r", &resp->nc);
 		err |= mbuf_printf(mb, ", cnonce=\"%r\"", &resp->cnonce);
 	}
 
