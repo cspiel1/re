@@ -24,15 +24,6 @@
 #include "sip.h"
 
 
-enum {
-	TCP_ACCEPT_TIMEOUT    = 32,
-	TCP_IDLE_TIMEOUT      = 900,
-	TCP_KEEPALIVE_TIMEOUT = 120,
-	TCP_KEEPALIVE_INTVAL  = 10,
-	TCP_BUFSIZE_MAX       = 65536,
-};
-
-
 struct sip_transport {
 	struct le le;
 	struct sa laddr;
@@ -40,6 +31,7 @@ struct sip_transport {
 	struct tls *tls;
 	void *sock;
 	enum sip_transp tp;
+	uint16_t timeout;
 };
 
 
@@ -56,6 +48,7 @@ struct sip_conn {
 	struct mbuf *mb;
 	struct sip *sip;
 	uint32_t ka_interval;
+	uint16_t timeout;
 	bool established;
 };
 
@@ -397,7 +390,7 @@ static void tcp_recv_handler(struct mbuf *mb, void *arg)
 
 		if (!memcmp(mbuf_buf(conn->mb), "\r\n", 2)) {
 
-			tmr_start(&conn->tmr, TCP_IDLE_TIMEOUT * 1000,
+			tmr_start(&conn->tmr, conn->timeout * 1000,
 				  conn_tmr_handler, conn);
 
 			conn->mb->pos += 2;
@@ -449,7 +442,7 @@ static void tcp_recv_handler(struct mbuf *mb, void *arg)
 			break;
 		}
 
-		tmr_start(&conn->tmr, TCP_IDLE_TIMEOUT * 1000,
+		tmr_start(&conn->tmr, conn->timeout * 1000,
 			  conn_tmr_handler, conn);
 
 		end = conn->mb->end;
@@ -547,6 +540,7 @@ static void tcp_connect_handler(const struct sa *paddr, void *arg)
 
 	conn->paddr = *paddr;
 	conn->sip   = transp->sip;
+	conn->timeout = transp->timeout;
 
 	err = tcp_accept(&conn->tc, transp->sock, tcp_estab_handler,
 			 tcp_recv_handler, tcp_close_handler, conn);
@@ -576,8 +570,8 @@ static void tcp_connect_handler(const struct sa *paddr, void *arg)
 }
 
 
-static int conn_send(struct sip_connqent **qentp, struct sip *sip, bool secure,
-		     const struct sa *dst, struct mbuf *mb,
+static int conn_send(struct sip_connqent **qentp, struct sip *sip, struct sip_transport *transp,
+		     bool secure, const struct sa *dst, struct mbuf *mb,
 		     sip_transp_h *transph, void *arg)
 {
 	struct sip_conn *conn, *new_conn = NULL;
@@ -599,6 +593,7 @@ static int conn_send(struct sip_connqent **qentp, struct sip *sip, bool secure,
 	hash_append(sip->ht_conn, sa_hash(dst, SA_ALL), &conn->he, conn);
 	conn->paddr = *dst;
 	conn->sip   = sip;
+	conn->timeout = transp->timeout;
 
 	err = tcp_connect(&conn->tc, dst, tcp_estab_handler, tcp_recv_handler,
 			  tcp_close_handler, conn);
@@ -611,10 +606,7 @@ static int conn_send(struct sip_connqent **qentp, struct sip *sip, bool secure,
 
 #ifdef USE_TLS
 	if (secure) {
-		const struct sip_transport *transp;
-
-		transp = transp_find(sip, SIP_TRANSP_TLS, sa_af(dst), dst);
-		if (!transp || !transp->tls) {
+		if (!transp->tls) {
 			err = EPROTONOSUPPORT;
 			goto out;
 		}
@@ -625,7 +617,7 @@ static int conn_send(struct sip_connqent **qentp, struct sip *sip, bool secure,
 	}
 #endif
 
-	tmr_start(&conn->tmr, TCP_IDLE_TIMEOUT * 1000, conn_tmr_handler, conn);
+	tmr_start(&conn->tmr, conn->timeout * 1000, conn_tmr_handler, conn);
 
  enqueue:
 	qent = mem_zalloc(sizeof(*qent), qent_destructor);
@@ -674,6 +666,7 @@ int sip_transp_add(struct sip *sip, enum sip_transp tp,
 {
 	struct sip_transport *transp;
 	struct tls *tls;
+	uint16_t timeout;
 	va_list ap;
 	int err;
 
@@ -687,6 +680,7 @@ int sip_transp_add(struct sip *sip, enum sip_transp tp,
 	list_append(&sip->transpl, &transp->le, transp);
 	transp->sip = sip;
 	transp->tp  = tp;
+	transp->timeout = TCP_IDLE_TIMEOUT;
 
 	va_start(ap, laddr);
 
@@ -710,9 +704,23 @@ int sip_transp_add(struct sip *sip, enum sip_transp tp,
 
 		transp->tls = mem_ref(tls);
 
-		/*@fallthrough@*/
+		timeout = tls_timeout(tls);
+		if (timeout)
+			transp->timeout = timeout;
+
+		err = tcp_listen((struct tcp_sock **)&transp->sock, laddr,
+				 tcp_connect_handler, transp);
+		if (err)
+			break;
+
+		err = tcp_sock_local_get(transp->sock, &transp->laddr);
+		break;
 
 	case SIP_TRANSP_TCP:
+		timeout = va_arg(ap, int);
+		if (timeout)
+			transp->timeout = timeout;
+
 		err = tcp_listen((struct tcp_sock **)&transp->sock, laddr,
 				 tcp_connect_handler, transp);
 		if (err)
@@ -727,6 +735,9 @@ int sip_transp_add(struct sip *sip, enum sip_transp tp,
 	}
 
 	va_end(ap);
+
+	if (transp->timeout < TCP_IDLE_TIMEOUT_MIN)
+		transp->timeout = TCP_IDLE_TIMEOUT_MIN;
 
 	if (err)
 		mem_deref(transp);
@@ -762,16 +773,16 @@ int sip_transp_send(struct sip_connqent **qentp, struct sip *sip, void *sock,
 	if (!sip || !dst || !mb)
 		return EINVAL;
 
+	transp = transp_find(sip, tp, sa_af(dst), dst);
+
+	if (!transp)
+		return EPROTONOSUPPORT;
+
 	switch (tp) {
 
 	case SIP_TRANSP_UDP:
-		if (!sock) {
-			transp = transp_find(sip, tp, sa_af(dst), dst);
-			if (!transp)
-				return EPROTONOSUPPORT;
-
+		if (!sock)
 			sock = transp->sock;
-		}
 
 		err = udp_send(sock, dst, mb);
 		break;
@@ -786,7 +797,7 @@ int sip_transp_send(struct sip_connqent **qentp, struct sip *sip, void *sock,
 		if (conn && conn->tc)
 			err = tcp_send(conn->tc, mb);
 		else
-			err = conn_send(qentp, sip, secure, dst, mb,
+			err = conn_send(qentp, sip, transp, secure, dst, mb,
 					transph, arg);
 		break;
 
