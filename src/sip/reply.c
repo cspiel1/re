@@ -58,17 +58,22 @@ static int vreplyf(struct sip_strans **stp, struct mbuf **mbp, bool trans,
 
 			if (!msg_param_exists(&msg->via.params, "rport", &rp)){
 				err |= mbuf_write_pl_skip(mb, &hdr->val, &rp);
-				err |= mbuf_printf(mb, ";rport=%u",
-						   sa_port(&msg->src));
-				rport = true;
+				if (sip->use_rport) {
+					err |= mbuf_printf(mb, ";rport=%u",
+							   sa_port(&msg->src));
+
+					rport = true;
+				}
 			}
 			else
 				err |= mbuf_write_pl(mb, &hdr->val);
 
-			if (rport || !sa_cmp(&msg->src, &msg->via.addr,
-					     SA_ADDR))
+			if (sip->use_rport && (
+				rport || !sa_cmp(&msg->src, &msg->via.addr,
+					     SA_ADDR))) {
 				err |= mbuf_printf(mb, ";received=%j",
 						   &msg->src);
+			}
 
 			err |= mbuf_write_str(mb, "\r\n");
 			break;

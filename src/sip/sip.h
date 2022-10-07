@@ -25,6 +25,7 @@ struct sip {
 	bool closing;
 	uint8_t tos;
 	enum sip_transp tp_def;
+	bool use_rport;
 };
 
 

@@ -129,6 +129,7 @@ int sip_alloc(struct sip **sipp, struct dnsc *dnsc, uint32_t ctsz,
 		return ENOMEM;
 
 	sip->tp_def = SIP_TRANSP_NONE;
+	sip->use_rport  = true;
 	err = sip_transp_init(sip, tcsz);
 	if (err)
 		goto out;
@@ -301,4 +302,13 @@ struct sip_conncfg *sip_conncfg_find(struct sip *sip,
 	}
 
 	return NULL;
+}
+
+
+void sip_enable_rport(struct sip *sip, bool enable)
+{
+	if (!sip)
+		return;
+
+	sip->use_rport = enable;
 }
