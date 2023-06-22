@@ -67,13 +67,13 @@ set key outside
 set xlabel "time/[ms]"
 set ylabel "[ms]"
 
-stats "ajb.dat" using ($6/1000) name "B"
+stats "ajb.dat" using ($9/1000) name "B"
 stats "ajb.dat" using 3 name "X"
 
-bufst(y) = y>0 ? B_max*0.8 + y*B_max*0.09 : NaN
+bufst(y) = y>0 ? B_max + (y+1)*20 : NaN
 text1(y) = y==1 ? "LOW" : y==2 ? "HIGH" : ""
 text2(y) = y==1 ? "UNDERRUN" : ""
-underr(y) =  B_max*0.7 + y*B_max*0.09
+underr(y) =  B_max + y*20
 
 plot \
 'ajb.dat' using 3:($5/1000) title 'jitter' with linespoints lc "orange", \

@@ -24,8 +24,8 @@ enum {
 	JITTER_EMA_COEFF   = 512,  /* Divisor for jitter EMA coefficient */
 	JITTER_UP_SPEED    = 64,   /* 64 times faster up than down       */
 	BUFTIME_EMA_COEFF  = 128,  /* Divisor for Buftime EMA coeff.     */
-	BUFTIME_LO         = 125,  /* 125% of jitter                     */
-	BUFTIME_HI         = 175,  /* 175% of jitter                     */
+	BUFTIME_LO         = 150,  /* 125% of jitter                     */
+	BUFTIME_HI         = 250,  /* 175% of jitter                     */
 	SKEW_MAX           = 10,   /* Max skew in [ms]                   */
 };
 
@@ -39,6 +39,7 @@ struct ajb {
 	uint64_t ts0;        /**< reference timestamp             */
 	uint64_t tr0;        /**< reference time of arrival       */
 	uint64_t tr00;       /**< arrival of first packet         */
+	int32_t bt0;
 #if DEBUG_LEVEL >= 6
 	struct {
 		int32_t d;
@@ -194,7 +195,9 @@ void ajb_reset(struct ajb *ajb)
 void ajb_calc(struct ajb *ajb, const struct auframe *af, size_t cur_sz)
 {
 	uint64_t tr;                       /**< Real time in [us]            */
-	uint32_t buftime, bufmax, bufmin;  /**< Buffer time in [us]          */
+	int32_t buftime;
+	int32_t delta;
+	uint32_t bufmax, bufmin;  /**< Buffer time in [us]          */
 	uint32_t bufwish;                  /**< Buffer wish time in [us]     */
 	int32_t d;                         /**< Time shift in [us]           */
 	int32_t da;                        /**< Absolut time shift in [us]   */
@@ -218,10 +221,11 @@ void ajb_calc(struct ajb *ajb, const struct auframe *af, size_t cur_sz)
 	da = abs(d);
 
 	szdiv = af->srate * af->ch *  aufmt_sample_size(af->fmt) / 1000;
-	buftime = (uint32_t) (cur_sz * 1000 / szdiv);
+	buftime = (int32_t) (cur_sz * 1000 / szdiv);
+
 	bufwish = (uint32_t) (ajb->wish_sz * 1000 / szdiv);
 	if (ajb->started) {
-		ajb->avbuftime += ((int32_t) buftime - ajb->avbuftime) /
+		ajb->avbuftime += (buftime - ajb->avbuftime) /
 				  BUFTIME_EMA_COEFF;
 		if (ajb->avbuftime < 0)
 			ajb->avbuftime = 0;
@@ -230,14 +234,14 @@ void ajb_calc(struct ajb *ajb, const struct auframe *af, size_t cur_sz)
 		/* Directly after "filling" of aubuf compute a good start value
 		 * fitting to wish size. */
 		ajb->avbuftime = buftime;
-		ajb->jitter = ajb->avbuftime * 100 * 2 /
-			(BUFTIME_LO + BUFTIME_HI);
+		ajb->jitter = 0;
 		ajb->started = true;
 	}
 
-	s = da > ajb->jitter ? JITTER_UP_SPEED : 1;
+	delta = abs(buftime - ajb->avbuftime);
+	s = delta > ajb->jitter ? JITTER_UP_SPEED : 1;
 
-	ajb->jitter += (da - ajb->jitter) * s / JITTER_EMA_COEFF;
+	ajb->jitter += (delta - ajb->jitter) * s / JITTER_EMA_COEFF;
 	if (ajb->jitter < 0)
 		ajb->jitter = 0;
 
@@ -249,7 +253,7 @@ void ajb_calc(struct ajb *ajb, const struct auframe *af, size_t cur_sz)
 	if (bufwish >= ptime)
 		bufmin = MAX(bufmin, bufwish - ptime / 3);
 
-	bufmax = MAX(bufmax, bufmin + 7 * ptime / 6);
+	bufmax = MAX(bufmax, bufmin + ptime);
 
 	/* reset time base if a frame is missing or skew is too high */
 	if (ts - ajb->ts > ptime || da > SKEW_MAX * 1000)
