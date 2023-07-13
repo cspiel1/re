@@ -242,14 +242,14 @@ typedef SSIZE_T ssize_t;
  * Give the compiler a hint which branch is "likely" or "unlikely" (inspired
  * by linux kernel and C++20/C2X)
  */
+#ifndef __ZEPHYR__
 #ifdef __GNUC__
-#ifndef likely
 #define likely(x)       __builtin_expect(!!(x), 1)
 #define unlikely(x)     __builtin_expect(!!(x), 0)
-#endif
 #else
 #define likely(x) x
 #define unlikely(x) x
+#endif
 #endif
 
 #ifdef WIN32
