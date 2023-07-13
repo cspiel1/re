@@ -139,10 +139,10 @@ int utf8_decode(struct re_printf *pf, const struct pl *pl)
 				if (i+4 >= pl->l)
 					return EBADMSG;
 
-				if (!isxdigit(pl->p[i+1]) ||
-				    !isxdigit(pl->p[i+2]) ||
-				    !isxdigit(pl->p[i+3]) ||
-				    !isxdigit(pl->p[i+4]))
+				if (!isxdigit((int) pl->p[i+1]) ||
+				    !isxdigit((int) pl->p[i+2]) ||
+				    !isxdigit((int) pl->p[i+3]) ||
+				    !isxdigit((int) pl->p[i+4]))
 					return EBADMSG;
 
 				u |= ((uint16_t)ch_hex(pl->p[++i])) << 12;
