@@ -46,10 +46,6 @@ typedef SSIZE_T ssize_t;
 /** Get number of elements in an array */
 #define RE_ARRAY_SIZE(a) ((sizeof(a))/(sizeof((a)[0])))
 
-/* Backwards compat */
-#define ARRAY_SIZE RE_ARRAY_SIZE
-
-
 /** Align a value to the boundary of mask */
 #define RE_ALIGN_MASK(x, mask)    (((x)+(mask))&~(mask))
 
@@ -247,8 +243,10 @@ typedef SSIZE_T ssize_t;
  * by linux kernel and C++20/C2X)
  */
 #ifdef __GNUC__
+#ifndef likely
 #define likely(x)       __builtin_expect(!!(x), 1)
 #define unlikely(x)     __builtin_expect(!!(x), 0)
+#endif
 #else
 #define likely(x) x
 #define unlikely(x) x
