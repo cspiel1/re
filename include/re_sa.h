@@ -17,7 +17,11 @@ typedef struct sockaddr_un {
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#ifdef __ZEPHYR__
+#include <zephyr/net/net_ip.h>
+#else
 #include <sys/un.h>
+#endif
 #endif
 
 
