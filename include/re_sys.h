@@ -69,12 +69,12 @@ void     rand_bytes(uint8_t *p, size_t size);
 
 
 /* File-System */
-int  fs_mkdir(const char *path, uint16_t mode);
-int  fs_gethome(char *path, size_t sz);
-bool fs_isdir(const char *path);
-bool fs_isfile(const char *file);
-int  fs_fopen(FILE **fp, const char *file, const char *mode);
-int  fs_fread(struct mbuf **mbp, const char *path);
+int  re_fs_mkdir(const char *path, uint16_t mode);
+int  re_fs_gethome(char *path, size_t sz);
+bool re_fs_isdir(const char *path);
+bool re_fs_isfile(const char *file);
+int  re_fs_fopen(FILE **fp, const char *file, const char *mode);
+int  re_fs_fread(struct mbuf **mbp, const char *path);
 
-void fs_stdio_hide(void);
-void fs_stdio_restore(void);
+void re_fs_stdio_hide(void);
+void re_fs_stdio_restore(void);

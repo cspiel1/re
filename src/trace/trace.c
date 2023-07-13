@@ -126,7 +126,7 @@ int re_trace_init(const char *json_file)
 		goto out;
 	}
 
-	err = fs_fopen(&trace.f, json_file, "w+");
+	err = re_fs_fopen(&trace.f, json_file, "w+");
 	if (err)
 		goto out;
 

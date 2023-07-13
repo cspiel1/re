@@ -1093,7 +1093,7 @@ int http_client_set_cert(struct http_cli *cli, const char *path)
 		return EINVAL;
 
 	cli->cert = mem_deref(cli->cert);
-	err = fs_fread(&cli->cert, path);
+	err = re_fs_fread(&cli->cert, path);
 	if (err) {
 		cli->cert = mem_deref(cli->cert);
 		return err;
@@ -1130,7 +1130,7 @@ int http_client_set_key(struct http_cli *cli, const char *path)
 		return EINVAL;
 
 	cli->key = mem_deref(cli->key);
-	err = fs_fread(&cli->key, path);
+	err = re_fs_fread(&cli->key, path);
 	if (err) {
 		cli->key = mem_deref(cli->key);
 		return err;

@@ -58,7 +58,7 @@ static int dup_stderr = -1;
  *
  * @return 0 if success, otherwise errorcode
  */
-int fs_mkdir(const char *path, uint16_t mode)
+int re_fs_mkdir(const char *path, uint16_t mode)
 {
 	int ret;
 
@@ -86,7 +86,7 @@ int fs_mkdir(const char *path, uint16_t mode)
  *
  * @return 0 if success, otherwise errorcode
  */
-int fs_gethome(char *path, size_t sz)
+int re_fs_gethome(char *path, size_t sz)
 {
 #ifdef WIN32
 	char win32_path[MAX_PATH];
@@ -139,7 +139,7 @@ int fs_gethome(char *path, size_t sz)
  *
  * @return True if directory, False if not
  */
-bool fs_isdir(const char *path)
+bool re_fs_isdir(const char *path)
 {
 	struct stat st;
 
@@ -163,7 +163,7 @@ bool fs_isdir(const char *path)
  *
  * @return True if exists and is regular file, False if not
  */
-bool fs_isfile(const char *file)
+bool re_fs_isfile(const char *file)
 {
 	struct stat st;
 
@@ -191,7 +191,7 @@ bool fs_isfile(const char *file)
  * @return 0 if success, otherwise errorcode
  *
  */
-int fs_fopen(FILE **fp, const char *file, const char *mode)
+int re_fs_fopen(FILE **fp, const char *file, const char *mode)
 {
 #ifdef WIN32
 	return fopen_s(fp, file, mode);
@@ -202,7 +202,7 @@ int fs_fopen(FILE **fp, const char *file, const char *mode)
 	if (!fp || !file || !str_isset(mode))
 		return EINVAL;
 
-	if (mode[0] == 'r' || fs_isfile(file))
+	if (mode[0] == 'r' || re_fs_isfile(file))
 		goto fopen;
 
 	fd = open(file, O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR);
@@ -226,7 +226,7 @@ fopen:
 /**
  * Hide/Close stdout and stderr output (no THREAD-SAFETY)
  */
-void fs_stdio_hide(void)
+void re_fs_stdio_hide(void)
 {
 	dup_stdout = dup(fileno(stdout));
 	dup_stderr = dup(fileno(stderr));
@@ -248,7 +248,7 @@ void fs_stdio_hide(void)
 /**
  * Restore stdout and stderr output (no THREAD-SAFETY)
  */
-void fs_stdio_restore(void)
+void re_fs_stdio_restore(void)
 {
 	if (dup_stdout < 0 || dup_stderr < 0)
 		return;
@@ -258,7 +258,7 @@ void fs_stdio_restore(void)
 }
 
 
-int fs_fread(struct mbuf **mbp, const char *path)
+int re_fs_fread(struct mbuf **mbp, const char *path)
 {
 	FILE *f = NULL;
 	size_t n = 0;
@@ -269,7 +269,7 @@ int fs_fread(struct mbuf **mbp, const char *path)
 	if (!mbp || !path)
 		return EINVAL;
 
-	err = fs_fopen(&f, path, "r");
+	err = re_fs_fopen(&f, path, "r");
 	if (err) {
 		DEBUG_WARNING("Could not open file '%s'\n", path);
 		return err;

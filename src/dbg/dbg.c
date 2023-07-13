@@ -105,7 +105,7 @@ int dbg_logfile_set(const char *name)
 	if (!name)
 		return 0;
 
-	err = fs_fopen(&dbg.f, name, "a+");
+	err = re_fs_fopen(&dbg.f, name, "a+");
 	if (err)
 		return err;
 

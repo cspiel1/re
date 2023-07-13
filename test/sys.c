@@ -124,16 +124,16 @@ int test_sys_fs_isdir(void)
 	re_snprintf(path, sizeof(path), "%s", test_datapath());
 	re_snprintf(file, sizeof(file), "%s/menu.json", test_datapath());
 
-	ret = fs_isdir(path);
+	ret = re_fs_isdir(path);
 	TEST_EQUALS(true, ret);
 
-	ret = fs_isdir(NULL);
+	ret = re_fs_isdir(NULL);
 	TEST_EQUALS(false, ret);
 
-	ret = fs_isdir(wpath);
+	ret = re_fs_isdir(wpath);
 	TEST_EQUALS(false, ret);
 
-	ret = fs_isdir(file);
+	ret = re_fs_isdir(file);
 	TEST_EQUALS(false, ret);
 
  out:
@@ -152,16 +152,16 @@ int test_sys_fs_isfile(void)
 	re_snprintf(path, sizeof(path), "%s", test_datapath());
 	re_snprintf(file, sizeof(file), "%s/menu.json", test_datapath());
 
-	ret = fs_isfile(file);
+	ret = re_fs_isfile(file);
 	TEST_EQUALS(true, ret);
 
-	ret = fs_isfile(NULL);
+	ret = re_fs_isfile(NULL);
 	TEST_EQUALS(false, ret);
 
-	ret = fs_isfile(wpath);
+	ret = re_fs_isfile(wpath);
 	TEST_EQUALS(false, ret);
 
-	ret = fs_isfile(path);
+	ret = re_fs_isfile(path);
 	TEST_EQUALS(false, ret);
 
  out:
@@ -181,15 +181,15 @@ int test_sys_fs_fopen(void)
 	re_snprintf(filename, sizeof(filename),
 		    "retest_fs_fopen-%llu", rand_u64());
 
-	err = fs_fopen(&file, filename, "w+");
+	err = re_fs_fopen(&file, filename, "w+");
 	TEST_ERR(err);
-	TEST_EQUALS(true, fs_isfile(filename));
+	TEST_EQUALS(true, re_fs_isfile(filename));
 
 	err = fclose(file);
 	TEST_ERR(err);
 
 	/* Try reopen */
-	err = fs_fopen(&file, filename, "w+");
+	err = re_fs_fopen(&file, filename, "w+");
 	TEST_ERR(err);
 
 	err = fclose(file);

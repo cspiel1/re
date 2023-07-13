@@ -350,7 +350,7 @@ int tls_add_cafile_path(struct tls *tls, const char *cafile,
 	if (!tls || (!cafile && !capath) || !tls->ctx)
 		return EINVAL;
 
-	if (capath && !fs_isdir(capath)) {
+	if (capath && !re_fs_isdir(capath)) {
 		return ENOTDIR;
 	}
 
