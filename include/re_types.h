@@ -46,8 +46,10 @@ typedef SSIZE_T ssize_t;
 /** Get number of elements in an array */
 #define RE_ARRAY_SIZE(a) ((sizeof(a))/(sizeof((a)[0])))
 
+#ifndef __ZEPHYR__
 /* Backwards compat */
 #define ARRAY_SIZE RE_ARRAY_SIZE
+#endif
 
 
 /** Align a value to the boundary of mask */
@@ -246,12 +248,14 @@ typedef SSIZE_T ssize_t;
  * Give the compiler a hint which branch is "likely" or "unlikely" (inspired
  * by linux kernel and C++20/C2X)
  */
+#ifndef __ZEPHYR__
 #ifdef __GNUC__
 #define likely(x)       __builtin_expect(!!(x), 1)
 #define unlikely(x)     __builtin_expect(!!(x), 0)
 #else
 #define likely(x) x
 #define unlikely(x) x
+#endif
 #endif
 
 #ifdef WIN32
