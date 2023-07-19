@@ -154,6 +154,9 @@ const char *sys_libre_version_get(void)
  */
 const char *sys_username(void)
 {
+#ifdef __ZEPHYR__
+	return "zephyr";
+#else
 #ifdef HAVE_PWD_H
 	char *login;
 
@@ -169,6 +172,7 @@ const char *sys_username(void)
 	return str_isset(login) ? login : NULL;
 #else
 	return NULL;
+#endif
 #endif
 }
 
