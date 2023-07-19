@@ -84,6 +84,8 @@ static inline int get_process_id(void)
 {
 #if defined(WIN32)
 	return (int)GetCurrentProcessId();
+#elif defined(__ZEPHYR__)
+	return 0;
 #else
 	return (int)getpid();
 #endif
