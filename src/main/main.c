@@ -837,9 +837,12 @@ int fd_setsize(int maxfds)
 		return 0;
 	}
 
-#ifdef WIN32
+#if defined(WIN32)
 	if (maxfds < 0)
 		return ENOSYS;
+#elif defined(__ZEPHYR__)
+	if (maxfds < 0)
+		maxfds = CONFIG_POSIX_MAX_FDS;
 #else
 	if (maxfds < 0) {
 		struct rlimit limits;
