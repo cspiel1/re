@@ -7,6 +7,8 @@
 #ifdef USE_OPENSSL
 #include <openssl/rand.h>
 #include <openssl/err.h>
+#elif USE_MBEDTLS
+#include <psa/crypto.h>
 #endif
 #include <re_types.h>
 #include <re_mbuf.h>
@@ -39,6 +41,10 @@ static void rand_init(void)
 	srand((uint32_t) tmr_jiffies());
 
 	inited = true;
+
+#ifdef USE_MBEDTLS
+	psa_crypto_init();
+#endif
 }
 #endif
 
@@ -72,6 +78,8 @@ uint32_t rand_u32(void)
 			      ERR_GET_REASON(ERR_get_error()));
 		ERR_clear_error();
 	}
+#elif defined(USE_MBEDTLS)
+	psa_generate_random((uint8_t *) &v, sizeof(v));
 #elif defined(HAVE_ARC4RANDOM)
 	v = arc4random();
 #elif defined(WIN32)
@@ -156,11 +164,21 @@ void rand_bytes(uint8_t *p, size_t size)
 			      ERR_GET_REASON(ERR_get_error()));
 		ERR_clear_error();
 	}
+#elif defined(USE_MBEDTLS)
+	psa_generate_random(p, size);
 #elif defined (HAVE_ARC4RANDOM)
 	arc4random_buf(p, size);
 #else
 	while (size--) {
 		p[size] = rand_u32();
 	}
+#endif
+}
+
+
+void rand_close(void)
+{
+#if USE_MBEDTLS
+	mbedtls_psa_crypto_free();
 #endif
 }

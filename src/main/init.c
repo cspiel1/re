@@ -181,6 +181,7 @@ void libre_close(void)
 	(void)fd_setsize(0);
 	net_sock_close();
 	re_thread_close();
+	rand_close();
 }
 
 

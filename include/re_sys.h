@@ -66,6 +66,7 @@ uint64_t rand_u64(void);
 char     rand_char(void);
 void     rand_str(char *str, size_t size);
 void     rand_bytes(uint8_t *p, size_t size);
+void     rand_close(void);
 
 
 /* File-System */
