@@ -67,7 +67,11 @@ static void event_handler(int flags, void *arg)
 	if (!(flags & FD_READ))
 		return;
 
+#ifdef __ZEPHYR__
+	n = read(mq->pfd[0], &msg, sizeof(msg));
+#else
 	n = pipe_read(mq->pfd[0], &msg, sizeof(msg));
+#endif
 	if (n < 0)
 		return;
 
@@ -112,10 +116,18 @@ int mqueue_alloc(struct mqueue **mqp, mqueue_h *h, void *arg)
 	mq->arg = arg;
 
 	mq->pfd[0] = mq->pfd[1] = RE_BAD_SOCK;
+#ifdef __ZEPHYR__
+	mq->pfd[0] = socket(AF_UNIX, SOCK_STREAM, 0);
+	if (mq->pfd[0] < 0) {
+		err = RE_ERRNO_SOCK;
+		goto out;
+	}
+#else
 	if (pipe(mq->pfd) < 0) {
 		err = RE_ERRNO_SOCK;
 		goto out;
 	}
+#endif
 
 	err = net_sockopt_blocking_set(mq->pfd[0], false);
 	if (err)
@@ -160,7 +172,11 @@ int mqueue_push(struct mqueue *mq, int id, void *data)
 	msg.data  = data;
 	msg.magic = MAGIC;
 
+#ifdef __ZEPHYR__
+	n = write(mq->pfd[0], &msg, sizeof(msg));
+#else
 	n = pipe_write(mq->pfd[1], &msg, sizeof(msg));
+#endif
 	if (n < 0)
 		return errno;
 
