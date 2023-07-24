@@ -9,6 +9,7 @@
 #include <re_mbuf.h>
 #include <re_list.h>
 #include <re_sa.h>
+#include <re_sys.h>
 #include <re_dns.h>
 #include "dns.h"
 #ifdef __ANDROID__
@@ -32,7 +33,7 @@ static int parse_resolv_conf(char *domain, size_t dsize,
 	if (!srvv || !n || !*n)
 		return EINVAL;
 
-	f = fopen("/etc/resolv.conf", "r");
+	err = re_fs_fopen(&f, "/etc/resolv.conf", "r");
 	if (!f)
 		return errno;
 

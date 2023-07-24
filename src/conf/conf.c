@@ -16,6 +16,7 @@
 #include <re_fmt.h>
 #include <re_mem.h>
 #include <re_mbuf.h>
+#include <re_sys.h>
 #include <re_conf.h>
 
 
@@ -38,9 +39,11 @@ struct conf {
 
 static int load_file(struct mbuf *mb, const char *filename)
 {
-	int err = 0, fd = open(filename, O_RDONLY);
-	if (fd < 0)
-		return errno;
+	int err = 0, fd;
+
+	err = re_fs_open(&fd, filename, O_RDONLY);
+	if (err)
+		return err;
 
 	for (;;) {
 		uint8_t buf[1024];

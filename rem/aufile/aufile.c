@@ -124,7 +124,7 @@ int aufile_open(struct aufile **afp, struct aufile_prm *prm,
 
 	af->mode = mode;
 
-	af->f = fopen(filename, mode == AUFILE_READ ? "rb" : "wb");
+	err = re_fs_fopen(&af->f, filename, mode == AUFILE_READ ? "rb" : "wb");
 	if (!af->f) {
 		err = errno;
 		goto out;

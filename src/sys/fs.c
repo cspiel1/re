@@ -184,6 +184,28 @@ bool re_fs_isfile(const char *file)
  * Open file with security enhancements (like fopen_s).
  * The file is created with mode 0600 if it does not exist
  *
+ * @param fdp   Pointer returning file descriptor
+ * @param file  Pathname
+ * @param flags argument flags
+ *
+ * @return 0 if success, otherwise errorcode
+ *
+ */
+int  re_fs_open(int *fdp, const char *file, int flags)
+{
+	int err = 0, fd = open(file, flags);
+	if (fd < 0)
+		return errno;
+
+	*fdp = fd;
+	return 0;
+}
+
+
+/**
+ * Open file with security enhancements (like fopen_s).
+ * The file is created with mode 0600 if it does not exist
+ *
  * @param fp   FILE pointer for allocation
  * @param file Pathname
  * @param mode fopen mode

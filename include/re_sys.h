@@ -74,6 +74,7 @@ int  re_fs_mkdir(const char *path, uint16_t mode);
 int  re_fs_gethome(char *path, size_t sz);
 bool re_fs_isdir(const char *path);
 bool re_fs_isfile(const char *file);
+int  re_fs_open(int *fdp, const char *file, int flags);
 int  re_fs_fopen(FILE **fp, const char *file, const char *mode);
 int  re_fs_fread(struct mbuf **mbp, const char *path);
 
