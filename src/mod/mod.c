@@ -60,7 +60,9 @@ static void mod_destructor(void *data)
 
 	list_unlink(&m->le);
 
+#if !defined(__ZEPHYR__)
 	_mod_close(m->h);
+#endif
 }
 
 
@@ -103,6 +105,13 @@ struct mod *mod_find(const char *name)
  */
 int mod_load(struct mod **mp, const char *name)
 {
+
+#if defined(__ZEPHYR__)
+	(void)mp;
+	(void)name;
+
+	return ENOSYS;
+#else
 	struct mod *m;
 	int err = 0;
 
@@ -144,6 +153,7 @@ int mod_load(struct mod **mp, const char *name)
 		*mp = m;
 
 	return err;
+#endif
 }
 
 
