@@ -13,6 +13,7 @@
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_linkaddr.h>
+#include <zephyr/sys/byteorder.h>
 
 
 #define DEBUG_MODULE "zephyrif"
@@ -62,15 +63,12 @@ int net_if_list(net_ifaddr_h *ifh, void *arg)
 	if (!iface)
 		return EADDRNOTAVAIL;
 
-	struct net_linkaddr *ll_addr = net_if_get_link_addr(iface);
-	if (!ll_addr)
+	if (NET_IF_MAX_IPV4_ADDR < 1)
 		return EADDRNOTAVAIL;
 
-	struct sockaddr saddr;
-	saddr.sa_family = AF_INET;
-	memcpy(saddr.data, ll_addr->addr,
-	       min(ll_addr->len, sizeof(saddr.data)));
-	sa_set_sa(&sa, &saddr);
+	sa_set_in(&sa,
+		  sys_be32_to_cpu(iface->config.ip.ipv4->unicast[0].
+			  address.in_addr.s_addr), 0);
 
 	(void)ifh(iface->if_dev->dev->name, &sa, arg);
 	return 0;
