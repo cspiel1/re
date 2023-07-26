@@ -190,7 +190,7 @@ uint64_t tmr_jiffies_usec(void)
 
 	/* Use CLOCK_MONOTONIC_RAW, if available,
 	   which is not subject to adjustment by NTP */
-#ifdef CLOCK_MONOTONIC_RAW
+#if defined(CLOCK_MONOTONIC_RAW) && !defined(__ZEPHYR__)
 	clock_id = CLOCK_MONOTONIC_RAW;
 #else
 	clock_id = CLOCK_MONOTONIC;
