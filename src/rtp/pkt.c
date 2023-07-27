@@ -140,8 +140,10 @@ int rtcp_vencode(struct mbuf *mb, enum rtcp_type type, uint32_t count,
 	uint16_t len;
 	const uint8_t *data;
 	size_t data_len;
+	uint32_t ssrc;
 	const uint32_t *srcv;
 	const char *reason;
+	uint8_t *name;
 	rtcp_encode_h *ench;
 	void *arg;
 	int err = 0;
@@ -193,8 +195,10 @@ int rtcp_vencode(struct mbuf *mb, enum rtcp_type type, uint32_t count,
 		break;
 
 	case RTCP_APP:
-		err  = mbuf_write_u32(mb, htonl(va_arg(ap, uint32_t)));
-		err |= mbuf_write_mem(mb, va_arg(ap, uint8_t *), 4);
+		ssrc = va_arg(ap, uint32_t);
+		name = va_arg(ap, uint8_t *);
+		err  = mbuf_write_u32(mb, htonl(ssrc));
+		err |= mbuf_write_mem(mb, name, 4);
 		data = va_arg(ap, const uint8_t *);
 		data_len = va_arg(ap, size_t);
 		if (data) {
