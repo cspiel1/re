@@ -39,6 +39,19 @@ int net_dst_source_addr_get(const struct sa *dst, struct sa *ip)
 	if (!dst || !ip || !sa_isset(dst, SA_ADDR)) {
 		return EINVAL;
 	}
+#ifdef __ZEPHYR__
+	struct net_if *iface = net_if_get_default();
+	if (!iface)
+		return EADDRNOTAVAIL;
+
+	if (NET_IF_MAX_IPV4_ADDR < 1)
+		return EADDRNOTAVAIL;
+
+	sa_set_in(ip,
+		  sys_be32_to_cpu(iface->config.ip.ipv4->unicast[0].
+			  address.in_addr.s_addr), 0);
+	return 0;
+#endif
 
 	if (sa_af(dst) == AF_INET6)
 		err = sa_set_str(ip, "::", 0);
