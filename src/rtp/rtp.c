@@ -91,6 +91,9 @@ int rtp_hdr_decode(struct rtp_header *hdr, struct mbuf *mb)
 	uint8_t buf[2];
 	int err, i;
 	size_t header_len;
+	uint16_t nseq;
+	uint32_t nts;
+	uint32_t nssrc;
 
 	if (!hdr || !mb)
 		return EINVAL;
@@ -109,9 +112,13 @@ int rtp_hdr_decode(struct rtp_header *hdr, struct mbuf *mb)
 	hdr->m    = (buf[1] >> 7) & 0x01;
 	hdr->pt   = (buf[1] >> 0) & 0x7f;
 
-	hdr->seq  = ntohs(mbuf_read_u16(mb));
-	hdr->ts   = ntohl(mbuf_read_u32(mb));
-	hdr->ssrc = ntohl(mbuf_read_u32(mb));
+	nseq  = mbuf_read_u16(mb);
+	nts   = mbuf_read_u32(mb);
+	nssrc = mbuf_read_u32(mb);
+
+	hdr->seq  = ntohs(nseq);
+	hdr->ts   = ntohl(nts);
+	hdr->ssrc = ntohl(nssrc);
 
 	header_len = hdr->cc*sizeof(uint32_t);
 	if (mbuf_get_left(mb) < header_len)
