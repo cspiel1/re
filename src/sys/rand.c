@@ -80,6 +80,8 @@ uint32_t rand_u32(void)
 	}
 #elif defined(USE_MBEDTLS)
 	psa_generate_random((uint8_t *) &v, sizeof(v));
+	if (!v)
+		v = (uint32_t) tmr_jiffies_usec();
 #elif defined(HAVE_ARC4RANDOM)
 	v = arc4random();
 #elif defined(WIN32)
