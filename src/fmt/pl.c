@@ -784,14 +784,17 @@ const char *pl_strstr(const struct pl *pl, const char *str)
  */
 int pl_ltrim(struct pl *pl)
 {
-	if (!pl_isset(pl))
+	if (!pl)
 		return EINVAL;
 
-	while (!re_regex(pl->p, 1, "[ \t\r\n]")) {
+	if (!pl_isset(pl))
+		return 0;
+
+	while (!re_regex(pl->p, 1, "[ \t\r\n]+", NULL)) {
 		++pl->p;
 		--pl->l;
 		if (!pl->l)
-			return EINVAL;
+			break;
 	}
 
 	return 0;
@@ -807,13 +810,16 @@ int pl_ltrim(struct pl *pl)
  */
 int pl_rtrim(struct pl *pl)
 {
-	if (!pl_isset(pl))
+	if (!pl)
 		return EINVAL;
 
-	while (!re_regex(pl->p + pl->l - 1, 1, "[ \t\r\n]")) {
+	if (!pl_isset(pl))
+		return 0;
+
+	while (!re_regex(pl->p + pl->l - 1, 1, "[ \t\r\n]+", NULL)) {
 		--pl->l;
 		if (!pl->l)
-			return EINVAL;
+			break;
 	}
 
 	return 0;
