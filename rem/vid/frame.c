@@ -4,9 +4,11 @@
  * Copyright (C) 2010 Creytiv.com
  */
 
+#include <stdint.h>
 #include <string.h>
 #include <re.h>
 #include <rem_vid.h>
+#include <rem_vidconv.h>
 
 
 /**
@@ -43,10 +45,10 @@ size_t vidframe_size(enum vidfmt fmt, const struct vidsz *sz)
 /**
  * Initialize a video frame
  *
- * @param vf       Video frame
- * @param fmt      Video pixel format
- * @param sz       Size of video frame
- * @param data     Pointer to video planes
+ * @param vf	   Video frame
+ * @param fmt	   Video pixel format
+ * @param sz	   Size of video frame
+ * @param data	   Pointer to video planes
  * @param linesize Pointer to linesizes
  */
 void vidframe_init(struct vidframe *vf, enum vidfmt fmt,
@@ -58,7 +60,7 @@ void vidframe_init(struct vidframe *vf, enum vidfmt fmt,
 		return;
 
 	for (i=0; i<4; i++) {
-		vf->data[i]     = data[i];
+		vf->data[i]	= data[i];
 		vf->linesize[i] = linesize[i];
 	}
 
@@ -467,5 +469,111 @@ void vidframe_copy(struct vidframe *dst, const struct vidframe *src)
 		(void)re_printf("vidframe_copy(): unsupported format:"
 				" %s\n", vidfmt_name(dst->fmt));
 		break;
+	}
+}
+
+
+enum vidrot vidrot_decode(const struct pl *pl)
+{
+	if (!pl)
+		return VIDROT_NORMAL;
+
+	if (pl_strcmp(pl, "cw90") == 0)
+		return VIDROT_90_CW;
+	else if (pl_strcmp(pl, "180") == 0)
+		return VIDROT_180;
+	else if (pl_strcmp(pl, "cw270") == 0)
+		return VIDROT_270_CW;
+	else
+		return VIDROT_NORMAL;
+}
+
+
+const char *vidrot_name(enum vidrot rot)
+{
+	switch (rot) {
+
+	case VIDROT_NORMAL:  return "normal";
+	case VIDROT_90_CW:   return "cw90";
+	case VIDROT_180:     return "180";
+	case VIDROT_270_CW:  return "cw270";
+	default:	     return "unknown";
+	}
+}
+
+
+static void
+yuv420p_rotate_plane_90cw(uint8_t *dst, unsigned dst_ls,
+			  const uint8_t *src, unsigned src_ls,
+			  unsigned src_w, unsigned src_h)
+{
+	for (unsigned y = 0; y < src_h; y++) {
+		for (unsigned x = 0; x < src_w; x++) {
+			dst[x * dst_ls + (src_h - y - 1)] =
+				src[y * src_ls + x];
+		}
+	}
+}
+
+
+static void rotate_yuv420p_90cw(struct vidframe *dst,
+				const struct vidframe *src)
+{
+	/* Y */
+	yuv420p_rotate_plane_90cw(dst->data[0], dst->linesize[0],
+				  src->data[0], src->linesize[0],
+				  src->size.w, src->size.h);
+
+	/* U */
+	yuv420p_rotate_plane_90cw(dst->data[1], dst->linesize[1],
+				  src->data[1], src->linesize[1],
+				  src->size.w >> 1, src->size.h >> 1);
+
+	/* V */
+	yuv420p_rotate_plane_90cw(dst->data[2], dst->linesize[2],
+				  src->data[2], src->linesize[2],
+				  src->size.w >> 1, src->size.h >> 1);
+}
+
+
+void vidframe_rotate_90cw(struct vidframe *dst,
+			  const struct vidframe *src,
+			  uint8_t *dst_buf,
+			  uint8_t *conv_buf)
+{
+	if (!dst || !src || !dst_buf)
+		return;
+
+	if (src->fmt != VID_FMT_YUV420P && src->fmt != VID_FMT_YUYV422) {
+		re_printf("vidframe_rotate_90cw: unsupported format: %s\n",
+			  vidfmt_name(src->fmt));
+		return;
+	}
+
+	unsigned src_w = src->size.w;
+	unsigned src_h = src->size.h;
+
+	struct vidsz dst_sz = {
+		.w = src_h,
+		.h = src_w
+	};
+
+	struct vidframe conv_frame;
+	switch (src->fmt) {
+		case VID_FMT_YUV420P:
+			vidframe_init_buf(dst, src->fmt, &dst_sz, dst_buf);
+			rotate_yuv420p_90cw(dst, src);
+			break;
+		case VID_FMT_YUYV422: {
+			vidframe_init_buf(dst, VID_FMT_YUV420P, &dst_sz,
+					  dst_buf);
+			vidframe_init_buf(&conv_frame, VID_FMT_YUV420P,
+					  &src->size, conv_buf);
+			vidconv(&conv_frame, src, NULL);
+			rotate_yuv420p_90cw(dst, &conv_frame);
+			break;
+		}
+		default:
+			break;
 	}
 }

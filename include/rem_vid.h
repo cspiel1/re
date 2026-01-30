@@ -43,6 +43,14 @@ enum vidorient {
 	VIDORIENT_LANDSCAPE_RIGHT,
 };
 
+/** Video rotation */
+enum vidrot {
+	VIDROT_NORMAL,
+	VIDROT_90_CW,
+	VIDROT_180,
+	VIDROT_270_CW,
+};
+
 /** Video size */
 struct vidsz {
 	unsigned w;  /**< Width  */
@@ -126,6 +134,10 @@ int  vidframe_alloc(struct vidframe **vfp, enum vidfmt fmt,
 		    const struct vidsz *sz);
 void vidframe_fill(struct vidframe *vf, uint32_t r, uint32_t g, uint32_t b);
 void vidframe_copy(struct vidframe *dst, const struct vidframe *src);
+void vidframe_rotate_90cw(struct vidframe *dst,
+			  const struct vidframe *src,
+			  uint8_t *dst_buf,
+			  uint8_t *conv_buf);
 
 
 const char *vidfmt_name(enum vidfmt fmt);
@@ -152,3 +164,6 @@ void vidframe_draw_vline(struct vidframe *f,
 void vidframe_draw_rect(struct vidframe *f,
 			unsigned x0, unsigned y0, unsigned w, unsigned h,
 			uint8_t r, uint8_t g, uint8_t b);
+
+enum vidrot vidrot_decode(const struct pl *pl);
+const char *vidrot_name(enum vidrot rot);
